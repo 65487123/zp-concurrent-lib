@@ -1,4 +1,5 @@
-import java.util.concurrent.ArrayBlockingQueue;
+import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
+
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -9,15 +10,15 @@ import java.util.concurrent.CountDownLatch;
  */
 public class Test {
     public static void main(String[] args) throws InterruptedException {
-        ArrayBlockingQueue oneToOneBlockingQueue = new ArrayBlockingQueue(80000000);
-        CountDownLatch countDownLatch = new CountDownLatch(80000000);
+        final NoLockBlockingQueue oneToOneBlockingQueue = new NoLockBlockingQueue(80000000,4);
+        final CountDownLatch countDownLatch = new CountDownLatch(100000000);
         long now  = System.currentTimeMillis();
         new Thread(){
             @Override
             public void run() {
-                for (int i = 0; i <20000000 ; i++) {
+                for (int i = 0; i <25000000 ; i++) {
                     try {
-                        oneToOneBlockingQueue.put(String.valueOf(i));
+                        oneToOneBlockingQueue.put(String.valueOf(i),0);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -27,9 +28,9 @@ public class Test {
         new Thread(){
             @Override
             public void run() {
-                for (int i = 0; i <20000000 ; i++) {
+                for (int i = 0; i <25000000 ; i++) {
                     try {
-                        oneToOneBlockingQueue.put(String.valueOf(i));
+                        oneToOneBlockingQueue.put(String.valueOf(i),1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -39,9 +40,9 @@ public class Test {
         new Thread(){
             @Override
             public void run() {
-                for (int i = 0; i <20000000 ; i++) {
+                for (int i = 0; i <25000000 ; i++) {
                     try {
-                        oneToOneBlockingQueue.put(String.valueOf(i));
+                        oneToOneBlockingQueue.put(String.valueOf(i),2);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -51,9 +52,9 @@ public class Test {
         new Thread(){
             @Override
             public void run() {
-                for (int i = 0; i <20000000 ; i++) {
+                for (int i = 0; i <25000000 ; i++) {
                     try {
-                        oneToOneBlockingQueue.put(String.valueOf(i));
+                        oneToOneBlockingQueue.put(String.valueOf(i),3);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -63,7 +64,7 @@ public class Test {
         new Thread(){
             @Override
             public void run() {
-                for (int i = 0; i <80000000 ; i++) {
+                for (int i = 0; i <100000000 ; i++) {
                     try {
                         oneToOneBlockingQueue.take();
                         countDownLatch.countDown();
