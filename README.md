@@ -5,11 +5,12 @@ Some concurrency tools written by myself
     java并发库，使用方法和juc包下的类相同（和juc下的工具类实现同样的接口）
 
 #  目前实现的类
+## com.lzp.util.concurrent.threadpool
 
+#### ThreadPoolExecutor.java
+    线程池，功能和用法和java.util.concurrent.ThreadPoolExecutor完全一样
 ## com.lzp.util.concurrent.blockingQueue
-
 ### nolock
-
 #### NoLockBlockingQueue.java
     高性能阻塞队列，适用于多个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
     使用方法：消费者线程必须得设置为2的次方，不然性能反而比jdk自带的队列差 
@@ -26,11 +27,6 @@ Some concurrency tools written by myself
     当生产者和消费者都只有一个线程时，性能比NoLockBlockingQueue要高
 ##### 缺点
     比较占资源（CPU时间片、CPU缓存）
-
 ### withlock
 
-## com.lzp.util.concurrent.threadpool
-
-#### ThreadPoolExecutor.java
-    线程池，功能和用法和java.util.concurrent.ThreadPoolExecutor完全一样
     
