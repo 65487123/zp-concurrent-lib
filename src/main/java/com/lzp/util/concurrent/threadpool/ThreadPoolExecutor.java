@@ -1,4 +1,5 @@
-package com.lzp.util.concurrent;
+package com.lzp.util.concurrent.threadpool;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,29 +7,88 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Description:线程池
+ * Description:线程池，和jdk的线程池用法一样
+ * 核心线程从创建后就一直存在，直到线程池被关闭，额外线程空闲一段时间就会死亡
  *
  * @author: Lu ZePing
  * @date: 2019/6/2 15:19
  */
-public class ThreadPoolExecutor implements Executor {
+public class ThreadPoolExecutor extends ExecutorServiceAdapter {
+    /**
+     * 核心线程数量
+     */
     private int coreNum;
+    /**
+     * 最大线程数量
+     */
+
     private int maxNum;
+    /**
+     * 阻塞队列
+     */
+
     private BlockingQueue<Runnable> blockingQueue;
+    /**
+     * 额外线程最大空闲时间
+     */
+
     private int timeout;
+    /**
+     * 线程工厂
+     */
+
     private ThreadFactory threadFactory;
+    /**
+     * 拒绝策略
+     */
     private RejectExecuHandler rejectedExecutionHandler;
+    /**
+     * 当前的工作线程数量
+     */
+
     private AtomicInteger workerSum = new AtomicInteger(0);
+    /**
+     * 当前的工作线程
+     */
+
     private List<Worker> workerList = new CopyOnWriteArrayList<Worker>();
+    /**
+     * 标志核心线程是否已满
+     */
+
     private volatile boolean coreThreadMax = false;
+    /**
+     * 标志额外线程是否已满
+     */
+
     private volatile boolean additionThreadMax = false;
+    /**
+     * 标志线程池是否已经被关闭(调用shutDown())
+     */
 
     private volatile boolean shutdown;
+
+    /**
+     * 标志线程池是否已经被立即关闭(调用shutDownNow())
+     */
+
     private volatile boolean shutdownNow;
 
+    /**
+     * Description:工作线程的封装
+     */
     class Worker implements Runnable {
+        /**
+         * 工作线程的第一个任务
+         */
         private Runnable firstTask;
+        /**
+         * 标志是否是额外线程
+         */
         private boolean additional;
+        /**
+         * 工作线程的引用
+         */
         private Thread thread;
 
         Worker(Runnable firstTask, boolean additional) {
@@ -152,20 +212,35 @@ public class ThreadPoolExecutor implements Executor {
     }
 
 
+    @Override
     public List<Runnable> shutdownNow() {
         this.shutdown = true;
         this.shutdownNow = true;
         for (Worker worker : workerList) {
             worker.thread.interrupt();
         }
-        while (true){
-            if (workerList.isEmpty()){
+        while (true) {
+            if (workerList.isEmpty()) {
                 return new ArrayList(blockingQueue);
             }
         }
     }
 
+    @Override
     public void shutdown() {
         this.shutdown = true;
     }
+
+
+    @Override
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return shutdownNow || (shutdown && blockingQueue.isEmpty());
+    }
+
+
 }

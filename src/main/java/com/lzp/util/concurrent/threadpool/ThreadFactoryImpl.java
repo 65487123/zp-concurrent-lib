@@ -1,10 +1,10 @@
-package com.lzp.util.concurrent;
+package com.lzp.util.concurrent.threadpool;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Description:线程工厂
+ * Description:线程工厂实现类
  *
  * @author: Lu ZePing
  * @date: 2019/6/2 15:19

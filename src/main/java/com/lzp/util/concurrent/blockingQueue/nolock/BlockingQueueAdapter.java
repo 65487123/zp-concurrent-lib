@@ -1,4 +1,4 @@
-package com.lzp.util.concurrent.blockingQueue;
+package com.lzp.util.concurrent.blockingQueue.nolock;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -1,18 +1,28 @@
-package com.lzp.util.concurrent.blockingQueue;
+package com.lzp.util.concurrent.blockingQueue.nolock;
 
+
+import com.lzp.util.concurrent.blockingQueue.nolock.BlockingQueueAdapter;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 
 /**
  * Description:高性能阻塞队列，适用于多个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
- *
+ * 使用方法：消费者线程必须得设置为2的次方，不然性能反而比jdk自带的队列查
  * @author: Lu ZePing
  * @date: 2019/7/20 12:19
  */
 public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
+    /**
+     * 指针压缩后4字节
+     */
     private AtomicReferenceArray<E>[] array;
+    /**
+     * 4字节，加上对象头12字节，一共20字节，还差44字节
+     */
     private final int m;
+
+    private int[] padding = new int[11];
     /**
      * @sun.misc.Contended 这个注解修饰数组，数组里的元素可能还是会出现伪共享，所以还是自己填充解决好了
      */
