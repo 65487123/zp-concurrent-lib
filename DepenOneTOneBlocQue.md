@@ -1,6 +1,6 @@
 #  DependenNoLocBlocQue
- 和 NoLockBlockingQueue 适用场景不同，这个队列适用于一个生产者生产下一个消息依赖于这个生产者生产的上一个消息被消费
- 而 NoLockBlockingQueue 适用于一个生产者生产下一个消息不依赖于这个生产者生产的上一个消息被消费
+ 和NoLockBlockingQueue 适用场景不同，这个队列适用于一个生产者生产下一个消息依赖于这个生产者生产的上一个消
+ 息被消费而 NoLockBlockingQueue 适用于一个生产者生产下一个消息不依赖于这个生产者生产的上一个消息被消费
 ##### 实现上和NoLockBlockingQueue的区别
     和NoLockBlockingQueue一样，底层都是一个数组。区别是，NoLockBlockingQueue进行put的时候发现数组当前索引位置的元素
     没有被消费会sleep一毫秒，进行take的时候发现数组当前索引位置没有元素同样会sleep一毫秒，这样做的好处是1、进一步消除
