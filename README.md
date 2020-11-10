@@ -1,9 +1,8 @@
 # zp-concurrent-lib
-Some concurrency tools written by myself
+自己写的一些java并发工具类
 
 #  功能介绍
     java并发库，使用方法和juc包下的类相同（和juc下的工具类实现同样的接口）
-
 #  目前实现的类
 ## com.lzp.util.concurrent.threadpool
 
@@ -27,6 +26,21 @@ Some concurrency tools written by myself
     当生产者和消费者都只有一个线程时，性能比NoLockBlockingQueue要高
 ##### 缺点
     比较占资源（CPU时间片、CPU缓存）
+#### DependenNoLocBlocQue.java
+    和 NoLockBlockingQueue 适用场景不同，这个队列适用于一个生产者生产下一个消息依赖于这个生产者生产的上一个消息被消费
+    而 NoLockBlockingQueue 适用于一个生产者生产下一个消息不依赖于这个生产者生产的上一个消息被消费
+##### 实现上和NoLockBlockingQueue的区别
+    和NoLockBlockingQueue一样，底层都是一个数组。区别是，NoLockBlockingQueue进行put的时候发现数组当前索引位置的元素没有被消费会sleep一毫秒，
+    进行take的时候发现数组当前索引位置没有元素同样会sleep一毫秒，这样做的好处是1、进一步消除伪共享:当头指针倒追尾指针时，头指针会等尾指针跑一毫秒，
+    当尾指针追上头指针时，尾指针会等头指针跑一毫秒。2、在队列已满或者队列空的时候，让出了大量cpu使用权，减少大量空轮询次数。
+    而这个队列不会调用sleep(),而是调用Thread.yield()
+##### 相比NoLockBlockingQueue，缺点：
+    在队列空的时候，调用take()会占用一个cpu的大量使用权。(在cpu比较空闲时，基本会跑满一个逻辑cpu)
+#### DependenOneTOneBlocQue.java
+    和 OneToOneBlockingQueue 适用场景不同，这个队列适用于生产者生产下一个消息依赖于生产者生产的上一个消息被消费
+    而 OneToOneBlockingQueue 适用于生产者生产下一个消息不依赖于生产者生产的上一个消息被消费    
+##### 缺点
+    在队列空的时候，调用take()会占用一个cpu的大量使用权。(在cpu比较空闲时，基本会跑满一个逻辑cpu)
 ### withlock
 
     
