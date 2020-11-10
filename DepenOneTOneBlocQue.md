@@ -1,4 +1,4 @@
-# DependenNoLocBlocQue
+#  DependenNoLocBlocQue
  和 NoLockBlockingQueue 适用场景不同，这个队列适用于一个生产者生产下一个消息依赖于这个生产者生产的上一个消息被消费
  而 NoLockBlockingQueue 适用于一个生产者生产下一个消息不依赖于这个生产者生产的上一个消息被消费
 ##### 实现上和NoLockBlockingQueue的区别
