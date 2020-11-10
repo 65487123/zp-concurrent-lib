@@ -42,7 +42,7 @@
     满或者队列空的时候，让出了大量cpu使用权，减少大量空轮询次数。而这个队列不会调用sleep(),而是调用Thread.yield()
 ##### 相比NoLockBlockingQueue，缺点：
     在队列空的时候，调用take()会占用一个cpu的大量使用权。(在cpu比较空闲时，基本会跑满一个逻辑cpu)
-#### DependenOneTOneBlocQue.java
+#### [DependenOneTOneBlocQue.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/DepenOneTOneBlocQue.md)
     和 OneToOneBlockingQueue 适用场景不同，这个队列适用于生产者生产下一个消息依赖于生产者生产的上一个消息被消费
     而 OneToOneBlockingQueue 适用于生产者生产下一个消息不依赖于生产者生产的上一个消息被消费    
 ##### 缺点
