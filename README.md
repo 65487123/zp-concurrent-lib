@@ -13,7 +13,7 @@
 
 [DependenNoLocBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenNoLocBlocQue.md)
  
-[DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DepenOneTOneBlocQue.md)
+[DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenOneTOneBlocQue.md)
    
 ## com.lzp.util.concurrent.blockingQueue.withlock
 
