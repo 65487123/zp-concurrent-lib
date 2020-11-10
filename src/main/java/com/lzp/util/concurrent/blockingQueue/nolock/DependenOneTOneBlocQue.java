@@ -7,14 +7,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Description:高性能阻塞队列，适用于一个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
  *
- * 和 {@link DependenOneTOneBlocQue}适用场景的区别：
- * 这个队列适用于生产者生产消息与消费者消费消息无依赖关系
- * 也就是说，生产者生产的前一个消息不管有没有被消费，都会生产下一个消息
+ * 和 {@link OneToOneBlockingQueue}唯一的区别是：
+ * 这个队列适用于生产者生产下一个消息依赖与上一个消息被消费
+ * 也就是说，生产者生产的前一个消息必须得被消费了，才会生产下一个消息
  *
  * @author: Lu ZePing
  * @date: 2019/7/20 12:19
  */
-public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
+public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
 
     /**
      * 指针压缩后4字节
@@ -44,13 +44,13 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
     private int[] tail = new int[16];
 
 
-    public OneToOneBlockingQueue(int preferCapacity) {
+    public DependenOneTOneBlocQue(int preferCapacity) {
         int capacity = tableSizeFor(preferCapacity);
         array = (E[]) new Object[capacity];
         m = capacity - 1;
     }
 
-    public OneToOneBlockingQueue() {
+    public DependenOneTOneBlocQue() {
         int capacity = tableSizeFor(100000);
         array = (E[]) new Object[capacity];
         m = capacity - 1;
@@ -61,8 +61,8 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
 
         int p = head[11]++ & m;
         while (array[p] != null) {
-            //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
-            Thread.sleep(1);
+            //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况
+            Thread.yield();
         }
         array[p] = obj;
     }
@@ -73,8 +73,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
         E e;
         int p = tail[0]++ & m;
         while ((e = array[p]) == null) {
-            //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
-            Thread.sleep(1);
+            Thread.yield();
         }
         array[p] = null;
         return  e;
@@ -93,8 +92,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
                 tail[0]--;
                 throw new InterruptedException();
             } else {
-                //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
-                Thread.sleep(1);
+                Thread.yield();
             }
         }
         array[p] = null;

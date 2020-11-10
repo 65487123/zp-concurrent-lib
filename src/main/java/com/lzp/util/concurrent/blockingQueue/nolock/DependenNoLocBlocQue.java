@@ -5,14 +5,14 @@ package com.lzp.util.concurrent.blockingQueue.nolock;
  * Description:高性能阻塞队列，适用于多个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
  * 使用方法：消费者线程必须得设置为2的次方，不然性能反而比jdk自带的队列差
  *
- * 和 {@link DependenNoLocBlocQue}适用场景的区别：
- * 这个队列适用于生产者生产消息与消费者消费消息无依赖关系
- * 也就是说，一个生产者生产的前一个消息不管有没有被消费，都会生产下一个消息
+ * 和 {@link NoLockBlockingQueue}适用场景的区别：
+ * 这个队列适用于生产者生产下一个消息依赖与上一个消息被消费
+ * 也就是说，一个生产者生产的前一个消息必须得被消费了，才会生产下一个消息
  *
  * @author: Lu ZePing
  * @date: 2019/7/20 12:19
  */
-public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
+public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
     /**
      * 指针压缩后4字节
      *
@@ -41,7 +41,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
     private int[] tail;
 
 
-    public NoLockBlockingQueue(int preferCapacity, int threadSum) {
+    public DependenNoLocBlocQue(int preferCapacity, int threadSum) {
         int capacity = tableSizeFor(preferCapacity);
         int capacityPerSlot = capacity / threadSum;
         array = (E[][]) new Object[threadSum][capacityPerSlot];
@@ -55,8 +55,8 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
     public void put(E obj, int threadId) throws InterruptedException {
         int p = head[16 * threadId]++ & m;
         while (array[threadId][p] != null) {
-            //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
-            Thread.sleep(1);
+            //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况
+            Thread.yield();
         }
         array[threadId][p] = obj;
     }
@@ -74,8 +74,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
                     return r;
                 }
             }
-            //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
-            Thread.sleep(1);
+            Thread.yield();
         }
     }
 
