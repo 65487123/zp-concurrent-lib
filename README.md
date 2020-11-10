@@ -5,19 +5,17 @@
     java并发库，使用方法和juc包下的类相同（和juc下的工具类实现同样的接口）
 #  目前实现的类
 ## com.lzp.util.concurrent.threadpool
-[ThreadPoolExecutor.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/ThreadPoolExecutor.md)
+[ThreadPoolExecutor.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ThreadPoolExecutor.md)
 
 ## com.lzp.util.concurrent.blockingQueue.nolock
-[NoLockBlockingQueue.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
+[NoLockBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
 
-[OneToOneBlockingQueue.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/OneToOneBlockingQueue.md)
+[OneToOneBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OneToOneBlockingQueue.md)
 
-[DependenNoLocBlocQue.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/DependenNoLocBlocQue.md)
+[DependenNoLocBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenNoLocBlocQue.md)
  
-[DependenOneTOneBlocQue.java] (https://github.com/65487123/zp-concurrent-lib/blob/master/DepenOneTOneBlocQue.md)
+[DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DepenOneTOneBlocQue.md)
    
-##### 缺点
-    和DependenNoLocBlocQue类似。
 ## com.lzp.util.concurrent.blockingQueue.withlock
 
     
