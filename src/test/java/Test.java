@@ -1,6 +1,7 @@
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
+import com.lzp.util.concurrent.threadpool.ThreadFactoryImpl;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 
 /**
  * Description:
@@ -9,72 +10,27 @@ import java.util.concurrent.CountDownLatch;
  * @date: 2020/8/9 11:46
  */
 public class Test {
+
     public static void main(String[] args) throws InterruptedException {
-        final NoLockBlockingQueue oneToOneBlockingQueue = new NoLockBlockingQueue(80000000,4);
-        final CountDownLatch countDownLatch = new CountDownLatch(100000000);
-        long now  = System.currentTimeMillis();
-        new Thread(){
-            @Override
-            public void run() {
-                for (int i = 0; i <25000000 ; i++) {
-                    try {
-                        oneToOneBlockingQueue.put(String.valueOf(i),0);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        new Thread(){
-            @Override
-            public void run() {
-                for (int i = 0; i <25000000 ; i++) {
-                    try {
-                        oneToOneBlockingQueue.put(String.valueOf(i),1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        new Thread(){
-            @Override
-            public void run() {
-                for (int i = 0; i <25000000 ; i++) {
-                    try {
-                        oneToOneBlockingQueue.put(String.valueOf(i),2);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        new Thread(){
-            @Override
-            public void run() {
-                for (int i = 0; i <25000000 ; i++) {
-                    try {
-                        oneToOneBlockingQueue.put(String.valueOf(i),3);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        new Thread(){
-            @Override
-            public void run() {
-                for (int i = 0; i <100000000 ; i++) {
-                    try {
-                        oneToOneBlockingQueue.take();
-                        countDownLatch.countDown();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
+        ExecutorService executorService  = new ThreadPoolExecutor(8,8,0,TimeUnit.SECONDS,new LinkedBlockingQueue(),new ThreadFactoryImpl("test"));
+        CountDownLatch countDownLatch = new CountDownLatch(100000000);
+        Runnable runnable = () -> {
+            sum();
+            countDownLatch.countDown();
+        };
+        long now = System.currentTimeMillis();
+        for (int i = 0 ;i <100000000 ;i++ ) {
+            executorService.execute(runnable);
+        }
         countDownLatch.await();
         System.out.println(System.currentTimeMillis() - now);
+    }
+
+    static int sum() {
+        int a = 0;
+        for (int i = 0; i < 100; i++) {
+            a += i;
+        }
+        return a;
     }
 }
