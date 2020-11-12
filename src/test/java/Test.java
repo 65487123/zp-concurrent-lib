@@ -1,5 +1,8 @@
+import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
+import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.threadpool.ThreadFactoryImpl;
+import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.util.concurrent.*;
 
@@ -10,9 +13,9 @@ import java.util.concurrent.*;
  * @date: 2020/8/9 11:46
  */
 public class Test {
-
-    public static void main(String[] args) throws InterruptedException {
-        ExecutorService executorService  = new ThreadPoolExecutor(8,8,0,TimeUnit.SECONDS,new LinkedBlockingQueue(),new ThreadFactoryImpl("test"));
+    static int a ;
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        ExecutorService executorService  = new ThreadPoolExecutor(4,4,0,new ArrayBlockingQueue(50000000),new ThreadFactoryImpl("test"));
         CountDownLatch countDownLatch = new CountDownLatch(100000000);
         Runnable runnable = () -> {
             sum();
@@ -24,6 +27,7 @@ public class Test {
         }
         countDownLatch.await();
         System.out.println(System.currentTimeMillis() - now);
+
     }
 
     static int sum() {
