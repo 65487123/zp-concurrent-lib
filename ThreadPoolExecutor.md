@@ -28,7 +28,7 @@
 # 和JUC包下的线程池性能测试对比：
 ### execute()500万次小任务
 #### 我的这个线程池
-![mine](https://github.com/65487123/zp-concurrent-lib/blob/master/picture/1c74679f7c13d3309c828e69ed476f0.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/1c74679f7c13d3309c828e69ed476f0.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/1f4769fcc8ca510a98b7ad474f7e90b.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/24355f76a90a795dee35b85e0210fe4.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/425f3042b55814a02b208e9dcabf1cd.png)
