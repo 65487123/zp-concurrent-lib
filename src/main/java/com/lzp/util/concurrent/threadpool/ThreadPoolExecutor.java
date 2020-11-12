@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Description:线程池，和jdk的线程池用法一样
@@ -137,6 +138,9 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                         }
                     }
                     while ((firstTask = blockingQueue.poll(timeout, TimeUnit.SECONDS)) != null);
+                    workerList.remove(this);
+                    workerSum.decrementAndGet();
+                    additionThreadMax = false;
                 } else {
                     while (true) {
                         firstTask.run();
@@ -291,9 +295,21 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         }
     }
 
+
+    /**
+     * Returns the current number of threads in the pool.
+     *
+     * @return the number of threads
+     */
+    public int getPoolSize() {
+        return workerList.size();
+    }
+
+
     @Override
     public void shutdown() {
         this.shutdown = true;
+
     }
 
 
