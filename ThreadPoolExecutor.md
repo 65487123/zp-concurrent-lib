@@ -28,18 +28,19 @@
 # 和JUC包下的线程池性能测试对比：
 ### execute()500万次小任务
 #### 我的这个线程池
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/1c74679f7c13d3309c828e69ed476f0.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/1f4769fcc8ca510a98b7ad474f7e90b.png)
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/24355f76a90a795dee35b85e0210fe4.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/425f3042b55814a02b208e9dcabf1cd.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/58efe65e87b35ef04bb2714b24b484f.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/70e3e47134d8c5bde4d4b3e47bc3420.png)
 #### juc包下的线程池
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/58efe65e87b35ef04bb2714b24b484f.png)
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/70e3e47134d8c5bde4d4b3e47bc3420.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/93e14cc0299bf84b91f291e0c37c252.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/ca68cb92aa49c5aea6d64224dbded69.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/1c74679f7c13d3309c828e69ed476f0.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/24355f76a90a795dee35b85e0210fe4.png)
 ### 500万次小任务
 #### 测试总结：
     都是开了4个线程的线程池，同一台主机(8个逻辑处理器)，同样的队列，都没产生gc。execute()500万次同样的任务，都关闭了JIT
     我的这个线程池耗时基本在12000ms+，JUC的线程池耗时基本都在22000ms+  而真正执行任务(run方法里的)的时间可以忽略不计
-    换句话说，执行任务额外耗时，JUC线程池比我这个线程池多差不多一倍
+    换句话说，执行任务额外耗时，JUC线程池比我这个线程池多差不多一倍。当然，如果执行的任务是很耗时的，比如有io操作，那么
+    这点差距可以忽略。
     
