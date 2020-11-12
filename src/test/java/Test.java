@@ -2,7 +2,6 @@ import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.threadpool.ThreadFactoryImpl;
-import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Test {
     public static void main(String[] args) throws InterruptedException{
-        ExecutorService executorService  = new ThreadPoolExecutor(4,4,0,new LinkedBlockingQueue(),new ThreadFactoryImpl("test"));
+        ExecutorService executorService  = new ThreadPoolExecutor(4,4,0,TimeUnit.SECONDS,new LinkedBlockingQueue(),new ThreadFactoryImpl("test"));
         CountDownLatch countDownLatch = new CountDownLatch(5000000);
         Runnable runnable = () -> {
             sum();
@@ -30,7 +29,7 @@ public class Test {
     }
     static int sum() {
         int a = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             a += i;
         }
         return a;
