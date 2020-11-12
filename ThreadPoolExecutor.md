@@ -20,6 +20,7 @@
     异步回调方法，当任务执行结束，会执行回调方法。
 ## 性能高
     简单自测了下，execute()大量小任务，性能比java.util.concurrent.ThreadPoolExecutor要高。
+    由于性能比jdk自带的线程池高，进一步降低了执行拒绝策略的概率
 # 和JUC包下的线程池性能测试对比：
 #### 我的这个线程池
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/17e46afea8b693c21f31c3bed30cb23.png)
