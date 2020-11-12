@@ -26,21 +26,20 @@
     异步回调方法，当任务执行结束，会执行回调方法。
     
 # 和JUC包下的线程池性能测试对比：
+### execute()500万次小任务
 #### 我的这个线程池
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/17e46afea8b693c21f31c3bed30cb23.png)
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/335ee85b1de0caa4b6e7ecb158fcba4.png)
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/41d725ebbebf2da2b3a93898d2cd7c7.png)
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/6c1c76b7fe5cc93106cff16071b950c.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/blob/master/picture/09f47e1b2dfb8be1e2f2000cfccdd97.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/10adeab26129902abfb0a3e6d625967.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/6d57b44d5f1a91604ffa65bf2cc6e38.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/6e2ba4fd77b723dab65da0453c26038.png)
 #### juc包下的线程池
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/33d70612020ee6c861647eaad84f193.png)
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/36d77a43dba6a0fc32022881447b557.png)
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/bc457ce89625f89c3907c2df16d3867.png)
-![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/f5fac0f42dec89700b7726eca828128.png)
-
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/77fea73805f129b8bb763d3f124d856.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/9b176d0a5a72be2a661df5c762a29c6.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/de7934932a68c5457c0013dfe237a87.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/e34e798679a4d631b0123e5988f0afe.png)
+### 500万次小任务
 #### 测试总结：
-    都是开了8个线程的线程池，同一台主机(8个逻辑处理器)，都没产生gc。execute()一亿次同样的任务
-    我的这个线程池耗时平均在9500ms左右，JUC的线程池耗时基本都在11500ms以上
-    这个测试阻塞队列是LinkedBlockingQueue，实际上，换成ArrayBlockingQueue，核心线程数设小
-    点(ArrayBlockingQueue的读和写用的是一把锁，所以消费者太多性能反而下降，变成性能瓶颈)，
-    execute()大量小任务时，我的这个队列性能是JDK自带队列的两倍左右(耗时为二分之一)
+    都是开了4个线程的线程池，同一台主机(8个逻辑处理器)，同样的队列，都没产生gc。execute()500万次同样的任务，都关闭了JIT
+    我的这个线程池耗时基本在12000ms+，JUC的线程池耗时基本都在22000ms+  而真正执行任务(run方法里的)的时间可以忽略不计
+    换句话说，执行任务额外耗时，JUC线程池比我这个线程池多差不多一倍
     
