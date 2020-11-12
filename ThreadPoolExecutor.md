@@ -37,6 +37,6 @@
     都是开了8个线程的线程池，同一台主机(8个逻辑处理器)，都没产生gc。execute()一亿次同样的任务
     我的这个线程池耗时平均在9500ms左右，JUC的线程池耗时基本都在11500ms以上
     这个测试阻塞队列是LinkedBlockingQueue，实际上，换成ArrayBlockingQueue，核心线程数设小
-    点(ArrayBlockingQueue的读和写用的是一把所，所以消费者太多性能反而下降，变成性能瓶颈)，
+    点(ArrayBlockingQueue的读和写用的是一把锁，所以消费者太多性能反而下降，变成性能瓶颈)，
     execute()大量小任务时，我的这个队列性能是JDK自带队列的两倍左右(耗时为二分之一)
     
