@@ -329,6 +329,12 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         return listenableFuture;
     }
 
+    public <T> Future<T> submit1(Callable<T> task) {
+        FutureTask<T> listenableFuture = new FutureTask(task);
+        this.execute(listenableFuture);
+        return listenableFuture;
+    }
+
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
         ListenableFuture<T> listenableFuture = new ListenableFuture(() -> {

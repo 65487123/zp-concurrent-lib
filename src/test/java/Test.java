@@ -14,18 +14,14 @@ import java.util.concurrent.*;
  */
 public class Test {
     public static void main(String[] args) throws InterruptedException, ExecutionException {
-        ExecutorService executorService = new ThreadPoolExecutor(4, 4, 2,TimeUnit.SECONDS, new LinkedBlockingQueue());
-        Future future = executorService.submit(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return sum();
-            }
-        });
-        System.out.println(future.cancel(true));
-        System.out.println(future.cancel(true));
-        System.out.println(future.isDone());
-        System.out.println(future.isCancelled());
-        System.out.println(future.get());
+        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(4, 4, 2, new LinkedBlockingQueue(),new ThreadFactoryImpl(""));
+        //CountDownLatch countDownLatch = new CountDownLatch(5000000);
+        long now = System.currentTimeMillis();
+        for (int i = 0; i <5000000 ; i++) {
+            
+        }
+        //countDownLatch.await();
+        System.out.println(System.currentTimeMillis() - now);
 
         /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
         Thread.sleep(15000);
@@ -43,7 +39,7 @@ public class Test {
 
     static int sum() {
         int a = 0;
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 1; i++) {
             a += i;
         }
         return a;
