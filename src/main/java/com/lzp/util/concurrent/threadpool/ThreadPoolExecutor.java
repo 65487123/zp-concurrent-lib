@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Description:线程池，和jdk的线程池用法一样
@@ -20,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 但是，如果没有抢到争夺额外线程的权利，会再次把任务丢进阻塞队列一次,如果队列还是满的，才会执行拒绝策略。(虽
  * 然第二次能加进去的概率很小很小...)
  *
- * 2、性能高
+ * 2、性能高(执行任务的额外耗时小)
  * 简单自测了下，execute()大量小任务，性能比{@link java.util.concurrent.ThreadPoolExecutor}要高很多。
  * 由于性能比jdk自带的线程池高，进一步降低了执行拒绝策略的概率(这才是主要原因）
  *
@@ -98,7 +97,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
     private volatile boolean shutdown;
 
     /**
-     * 标志线程池是否已经被立即关闭(调用shutDownNow())
+     * 标志线程池是否已经被立即关闭(调用shutDownNow())，或者调用shutDown()后并且队列没任务
      */
     private volatile boolean shutdownNow;
 
@@ -108,8 +107,9 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
     class Worker implements Runnable {
         /**
          * 工作线程的第一个任务
+         * 用volatile修饰主要是为了防止shutDown()出问题
          */
-        private Runnable firstTask;
+        private volatile Runnable firstTask;
         /**
          * 标志是否是额外线程
          */
@@ -132,6 +132,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 if (additional) {
                     do {
                         firstTask.run();
+                        firstTask = null;
                         if (shutdownNow) {
                             workerList.remove(this);
                             return;
@@ -144,6 +145,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 } else {
                     while (true) {
                         firstTask.run();
+                        firstTask = null;
                         if (shutdownNow) {
                             workerList.remove(this);
                             return;
@@ -288,11 +290,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         for (Worker worker : workerList) {
             worker.thread.interrupt();
         }
-        while (true) {
-            if (workerList.isEmpty()) {
-                return new ArrayList(blockingQueue);
-            }
-        }
+        return new ArrayList(blockingQueue);
     }
 
 
@@ -308,8 +306,9 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
 
     @Override
     public void shutdown() {
+        ExecutorService executorService = this;
+        this.execute(executorService::shutdownNow);
         this.shutdown = true;
-
     }
 
 
@@ -323,5 +322,20 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         return shutdownNow || (shutdown && blockingQueue.isEmpty());
     }
 
-
+    /**
+     * 调用shutDown时会用到，中断空闲的线程
+     *
+     * @return the number of threads
+     */
+    private void stop() throws InterruptedException {
+        this.shutdownNow = true;
+        while (workerList.size() != 1) {
+            for (Worker worker : workerList) {
+                if (worker.firstTask == null && worker.thread != Thread.currentThread()) {
+                    worker.thread.interrupt();
+                }
+            }
+            Thread.sleep(1000);
+        }
+    }
 }
