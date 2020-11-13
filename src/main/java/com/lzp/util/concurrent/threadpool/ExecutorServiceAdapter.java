@@ -18,15 +18,9 @@ public abstract class ExecutorServiceAdapter implements ExecutorService {
         return false;
     }
 
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return null;
-    }
 
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        return null;
-    }
+
+
 
     @Override
     public Future<?> submit(Runnable task) {

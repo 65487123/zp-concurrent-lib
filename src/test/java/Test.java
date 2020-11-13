@@ -3,7 +3,6 @@ import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.threadpool.RejectExecuHandler;
 import com.lzp.util.concurrent.threadpool.ThreadFactoryImpl;
-import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.util.concurrent.*;
 
@@ -14,24 +13,20 @@ import java.util.concurrent.*;
  * @date: 2020/8/9 11:46
  */
 public class Test {
-    public static void main(String[] args) throws InterruptedException {
-        ExecutorService executorService = new ThreadPoolExecutor(4, 4, 2, new LinkedBlockingQueue(), new ThreadFactoryImpl("test"), new RejectExecuHandler() {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        ExecutorService executorService = new ThreadPoolExecutor(4, 4, 2,TimeUnit.SECONDS, new LinkedBlockingQueue());
+        Future future = executorService.submit(new Callable<Object>() {
             @Override
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                r.run();
+            public Object call() throws Exception {
+                return sum();
             }
         });
-        CountDownLatch countDownLatch = new CountDownLatch(5000000);
-        Runnable runnable = () -> {
-            sum();
-            countDownLatch.countDown();
-        };
-        long now = System.currentTimeMillis();
-        for (int i = 0; i < 5000000; i++) {
-            executorService.execute(runnable);
-        }
-        executorService.shutdownNow();
-        System.out.println(System.currentTimeMillis() - now);
+        System.out.println(future.cancel(true));
+        System.out.println(future.cancel(true));
+        System.out.println(future.isDone());
+        System.out.println(future.isCancelled());
+        System.out.println(future.get());
+
         /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
         Thread.sleep(15000);
         System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
@@ -48,7 +43,7 @@ public class Test {
 
     static int sum() {
         int a = 0;
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10000000; i++) {
             a += i;
         }
         return a;

@@ -322,6 +322,23 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         return shutdownNow || (shutdown && blockingQueue.isEmpty());
     }
 
+    @Override
+    public <T> ListenableFuture<T> submit(Callable<T> task) {
+        ListenableFuture<T> listenableFuture = new ListenableFuture(task);
+        this.execute(listenableFuture);
+        return listenableFuture;
+    }
+
+    @Override
+    public <T> Future<T> submit(Runnable task, T result) {
+        ListenableFuture<T> listenableFuture = new ListenableFuture(() -> {
+            task.run();
+            return result;
+        });
+        this.execute(listenableFuture);
+        return listenableFuture;
+    }
+
     /**
      * 调用shutDown时会用到，中断空闲的线程
      *
