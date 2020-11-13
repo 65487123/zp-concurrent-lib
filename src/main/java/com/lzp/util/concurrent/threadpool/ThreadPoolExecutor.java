@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Description:线程池，和jdk的线程池用法一样
- * 核心线程从创建后就一直存在，直到线程池被关闭，额外线程空闲一段时间就会死亡
+ * 核心线程从创建后就一直存在，直到线程池被关闭，额外线程空闲一段时间就会死亡,超时单位不用填，只能是秒
  *
  * 相比{@link java.util.concurrent.ThreadPoolExecutor}的优势
  *
@@ -28,13 +28,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 任务而没有执行拒绝策略。(测试结果和机器有关，总的来说，当队列容量远小于总任务数量，核心线程数量又小于
  * 最大线程数时，执行拒绝策略的概率比JDK自带的线程池小很多)
  *
- * 2、重写了submit(),返回的Future可以增加异步回调方法
+ * 3、重写了submit(),返回的Future可以增加异步回调方法
  * JDK自带的线程池，执行submit()返回的是{@link FutureTask}对象，这个对象获取结果需要阻塞等待，
  * 而这个返回的是{@link ListenableFuture},这个future能添加异步回调方法，当任务执行结束，会执行回调方法。
  *
- * 2、性能高
- * 简单自测了下，execute()大量小任务，性能比{@link java.util.concurrent.ThreadPoolExecutor}要高很多。
- * 由于性能比jdk自带的线程池高，进一步降低了执行拒绝策略的概率
  *
  * @author: Lu ZePing
  * @date: 2019/6/2 15:19
