@@ -169,7 +169,9 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
     }
 
     /**
-     * @Description 添加回调方法
+     * @description 添加回调方法
+     * @param executor 异步执行任务的执行器
+     * @param futureCallback 回调接口实现类
      */
     public void addCallback(Executor executor, FutureCallback<R> futureCallback) {
         if (executor == null || futureCallback == null) {

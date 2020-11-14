@@ -9,15 +9,15 @@ package com.lzp.util.concurrent.threadpool;
 public interface FutureCallback<R> {
     /**
      * @return
-     * @Description 当future已经成功完成，执行的回调方法
-     * @Param future返回的结果
+     * @description 当future已经成功完成，执行的回调方法
+     * @param r future返回的结果
      */
     void onSuccess(R r);
 
     /**
      * @return
-     * @Description 当future失败时，执行的回调方法
-     * @Param future抛出的异常或错误
+     * @description 当future失败时，执行的回调方法
+     * @param t future抛出的异常或错误
      */
     void onFailure(Throwable t);
 }
