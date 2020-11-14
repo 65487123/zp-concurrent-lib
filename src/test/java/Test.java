@@ -14,20 +14,28 @@ import java.util.concurrent.*;
  * @date: 2020/8/9 11:46
  */
 public class Test {
-    public static void main(String[] args) throws InterruptedException, ExecutionException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
         //创建线程池(com.lzp.util.concurrent.threadpool.ThreadPoolExecutor)
-        ExecutorService executorService = new ThreadPoolExecutor(2, 2, 0, new LinkedBlockingQueue(), new ThreadFactoryImpl(""));
-        long now = System.currentTimeMillis();
-        Future future = executorService.submit(() -> {
-            try {
-                new CountDownLatch(1).await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, new LinkedBlockingQueue(), new ThreadFactoryImpl(""));
+        //执行submit(),我的这个线程池就会返回ListenableFuture对象
+        ListenableFuture<String> future = executorService.submit(() -> {
+            Thread.sleep(5000);
+            return  "任务完成";
+        });
+        //添加异步回调任务
+        future.addCallback( new FutureCallback<String>() {
+            @Override
+            public void onSuccess(String s) {
+                System.out.println(System.currentTimeMillis() + " " + s);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                System.out.println(t.toString());
             }
         });
-        Thread.sleep(1000);
-        future.cancel(true);
-        executorService.shutdown();
+        //执行主线程的其他事情
+        System.out.println(System.currentTimeMillis() + " 执行主线程的其他事情");
         /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
         Thread.sleep(15000);
         System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
