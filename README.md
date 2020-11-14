@@ -6,7 +6,7 @@
 ## com.lzp.util.concurrent.threadpool
 [ThreadPoolExecutor.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ThreadPoolExecutor.md)
 
-[ListenableFuture.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ThreadPoolExecutor.md)
+[ListenableFuture.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ListenableFuture.md)
 
 ## com.lzp.util.concurrent.blockingQueue.nolock
 [NoLockBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
