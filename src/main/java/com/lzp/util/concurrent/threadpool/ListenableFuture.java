@@ -1,9 +1,7 @@
 package com.lzp.util.concurrent.threadpool;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
@@ -154,7 +152,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
             this.waitThreads.add(Thread.currentThread());
             while (this.state < IS_DONE) {
                 LockSupport.park();
-                if (Thread.interrupted()){
+                if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
             }
