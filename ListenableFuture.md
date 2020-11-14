@@ -4,11 +4,10 @@
 # 功能
     Future接口定义的功能都实现了，新加了一个添加回调方法的功能
     /**
-     * @description 添加回调任务。回调任务是可以添加多个的,不管添加几个,都会执行
-     * @param executor 异步执行任务的执行器
      * @param futureCallback 回调接口实现类
+     * @description 添加回调任务。回调任务是可以添加多个的,不管添加几个,都会执行
      */
-    public void addCallback(Executor executor, FutureCallback<R> futureCallback)
+    public void addCallback(FutureCallback<R> futureCallback)
     
     
 # 使用方法
