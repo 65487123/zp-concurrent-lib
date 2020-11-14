@@ -20,10 +20,10 @@ public class Test {
         //执行submit(),我的这个线程池就会返回ListenableFuture对象
         ListenableFuture<String> future = executorService.submit(() -> {
             Thread.sleep(5000);
-            return  "任务完成";
+            return "任务完成";
         });
         //添加异步回调任务
-        future.addCallback( new FutureCallback<String>() {
+        future.addCallback(new FutureCallback<String>() {
             @Override
             public void onSuccess(String s) {
                 System.out.println(System.currentTimeMillis() + " " + s);
