@@ -2,6 +2,7 @@ package com.lzp.util.concurrent.threadpool;
 
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,7 +77,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
      * 当前的工作线程
      */
 
-    private List<Worker> workerList = new CopyOnWriteArrayList<>();
+    private final List<Worker> workerList = new ArrayList<>(maxNum);
 
     /**
      * 标志核心线程是否已满
@@ -231,8 +232,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
             rejectedExecutionHandler.rejectedExecution(command, this);
             //判断线程数是否已经达到核心线程数
         } else if (coreThreadMax) {
-            if (blockingQueue.offer(command)) {
-            } else {
+            if (!blockingQueue.offer(command)) {
                 //核心线程数满了,队列也满了,判断线程数是否已经达到最大线程数
                 if (additionThreadMax) {
                     rejectedExecutionHandler.rejectedExecution(command, this);
@@ -250,7 +250,11 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                         if (workerSum.intValue() == maxNum) {
                             this.additionThreadMax = true;
                         }
-                        workerList.add(new Worker(command, true));
+                        synchronized (workerList) {
+                            if (!shutdown) {
+                                workerList.add(new Worker(command, true));
+                            }
+                        }
                     }
                 }
             }
@@ -263,7 +267,11 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 } else {
                     //发现队列已满，查看是否抢到创建额外线程机会
                     if (workerSum.intValue() <= maxNum) {
-                        workerList.add(new Worker(command, true));
+                        synchronized (workerList) {
+                            if (!shutdown) {
+                                workerList.add(new Worker(command, true));
+                            }
+                        }
                     } else {
                         workerSum.decrementAndGet();
                         rejectedExecutionHandler.rejectedExecution(command, this);
@@ -274,7 +282,11 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 if (workerSum.intValue() == coreNum) {
                     this.coreThreadMax = true;
                 }
-                workerList.add(new Worker(command, false));
+                synchronized (workerList) {
+                    if (!shutdown) {
+                        workerList.add(new Worker(command, false));
+                    }
+                }
             }
         }
     }
@@ -284,8 +296,10 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
     public List<Runnable> shutdownNow() {
         this.shutdown = true;
         this.shutdownNow = true;
-        for (Worker worker : workerList) {
-            worker.thread.interrupt();
+        synchronized (workerList) {
+            for (Worker worker : workerList) {
+                worker.thread.interrupt();
+            }
         }
         return new ArrayList(blockingQueue);
     }
@@ -303,9 +317,12 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
 
     @Override
     public void shutdown() {
-        ExecutorService executorService = this;
-        this.execute(executorService::shutdownNow);
         this.shutdown = true;
+        ThreadPoolExecutor executorService = this;
+        this.execute(executorService::stop);
+        synchronized (this) {
+            this.notifyAll();
+        }
     }
 
 
@@ -320,17 +337,49 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
     }
 
     @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        if (shutdown && this.workerList.isEmpty()) {
+            return true;
+        } else {
+            synchronized (this) {
+                if (shutdown && this.workerList.isEmpty()) {
+                    return true;
+                } else {
+                    long remainingTime = unit.toMillis(timeout);
+                    long deadLine = System.currentTimeMillis() + remainingTime;
+                    while (!shutdown && remainingTime > 0) {
+                        this.wait(remainingTime);
+                        remainingTime = deadLine - System.currentTimeMillis();
+                    }
+                    if (remainingTime < 0) {
+                        //等待的时间到了
+                        return shutdown && this.workerList.isEmpty();
+                    } else {
+                        //如果是调用shutDown(),被唤醒时，线程池肯定已经终止了，如果是shutDownNow(),被唤醒时不一定已经终止
+                        if (workerList.isEmpty()) {
+                            return true;
+                        } else {
+                            while (deadLine > System.currentTimeMillis()) {
+                                Thread.sleep(5);
+                                if (workerList.isEmpty()) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public <T> ListenableFuture<T> submit(Callable<T> task) {
         ListenableFuture<T> listenableFuture = new ListenableFuture(task);
         this.execute(listenableFuture);
         return listenableFuture;
     }
 
-    public <T> Future<T> submit1(Callable<T> task) {
-        FutureTask<T> listenableFuture = new FutureTask(task);
-        this.execute(listenableFuture);
-        return listenableFuture;
-    }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
@@ -342,20 +391,120 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         return listenableFuture;
     }
 
-    /**
-     * 调用shutDown时会用到，中断空闲的线程
-     *
-     * @return the number of threads
-     */
-    private void stop() throws InterruptedException {
-        this.shutdownNow = true;
-        while (workerList.size() != 1) {
-            for (Worker worker : workerList) {
-                if (worker.firstTask == null && worker.thread != Thread.currentThread()) {
-                    worker.thread.interrupt();
+    @Override
+    public Future<?> submit(Runnable task) {
+        ListenableFuture<?> listenableFuture = new ListenableFuture(() -> {
+            task.run();
+            return null;
+        });
+        this.execute(listenableFuture);
+        return listenableFuture;
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+        if (tasks == null) {
+            throw new NullPointerException();
+        }
+        ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
+        boolean done = false;
+        try {
+            for (Callable<T> t : tasks) {
+                RunnableFuture<T> f = new FutureTask<>(t);
+                futures.add(f);
+                execute(f);
+            }
+            for (Future<T> f : futures) {
+                if (!f.isDone()) {
+                    try {
+                        f.get();
+                    } catch (CancellationException | ExecutionException ignore) {
+                    }
                 }
             }
-            Thread.sleep(1000);
+            done = true;
+            return futures;
+        } finally {
+            if (!done) {
+                for (Future<T> future : futures) {
+                    future.cancel(true);
+                }
+            }
+        }
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+        if (tasks == null) {
+            throw new NullPointerException();
+        }
+        long nanos = unit.toNanos(timeout);
+        ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
+        boolean done = false;
+        try {
+            for (Callable<T> t : tasks) {
+                futures.add(new FutureTask<>(t));
+            }
+
+            final long deadline = System.nanoTime() + nanos;
+            final int size = futures.size();
+
+            // Interleave time checks and calls to execute in case
+            // executor doesn't have any/much parallelism.
+            for (int i = 0; i < size; i++) {
+                execute((Runnable) futures.get(i));
+                nanos = deadline - System.nanoTime();
+                if (nanos <= 0L) {
+                    return futures;
+                }
+            }
+
+            for (int i = 0; i < size; i++) {
+                Future<T> f = futures.get(i);
+                if (!f.isDone()) {
+                    if (nanos <= 0L) {
+                        return futures;
+                    }
+                    try {
+                        f.get(nanos, TimeUnit.NANOSECONDS);
+                    } catch (CancellationException | ExecutionException ignore) {
+                    } catch (TimeoutException toe) {
+                        return futures;
+                    }
+                    nanos = deadline - System.nanoTime();
+                }
+            }
+            done = true;
+            return futures;
+        } finally {
+            if (!done) {
+                for (Future<T> future : futures) {
+                    future.cancel(true);
+                }
+            }
+        }
+    }
+
+    /**
+     * 调用shutDown时会用到，中断空闲的线程
+     */
+    private void stop() {
+        this.shutdownNow = true;
+        while (workerList.size() != 1) {
+            synchronized (workerList) {
+                for (Worker worker : workerList) {
+                    if (worker.firstTask == null && worker.thread != Thread.currentThread()) {
+                        worker.thread.interrupt();
+                    }
+                }
+            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ignored) {
+            }
+        }
+        synchronized (this) {
+            this.notifyAll();
         }
     }
 }

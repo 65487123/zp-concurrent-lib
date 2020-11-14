@@ -3,10 +3,8 @@ import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.threadpool.*;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 /**
@@ -18,27 +16,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Test {
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         //创建线程池(com.lzp.util.concurrent.threadpool.ThreadPoolExecutor)
-        ExecutorService executorService = new ThreadPoolExecutor(1, 1, 0, new LinkedBlockingQueue(), new ThreadFactoryImpl(""));
+        ExecutorService executorService = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue(), new ThreadFactoryImpl(""));
         //执行submit()方法,我的这个线程池就会返回ListenableFuture对象
-        ListenableFuture<String> listenableFuture = (ListenableFuture<String>) executorService.submit(() -> {
+        executorService.submit(() -> {
             Thread.sleep(5000);
             return "任务完成";
         });
-        //添加异步回调方法
-        listenableFuture.addCallback(executorService, new FutureCallback<String>() {
-            @Override
-            public void onSuccess(String s) {
-                System.out.println(System.currentTimeMillis() + " " +s);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                System.out.println(t.toString());
-            }
-        });
-        //执行主线程的其他事情
-        System.out.println(System.currentTimeMillis() + ": 执行主线程的其他事情");
-
+        System.out.println(executorService.awaitTermination(5,TimeUnit.SECONDS));
 
 
         /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());

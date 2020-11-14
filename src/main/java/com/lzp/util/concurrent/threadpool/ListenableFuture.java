@@ -37,40 +37,38 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
     @Override
     public void run() {
         this.thread = Thread.currentThread();
-        if (this.state != IS_CANCELED) {
-            try {
-                synchronized (this) {
-                    if (this.state != IS_CANCELED) {
-                        result = callable.call();
-                        //有可能在这上下两行中间被意外中断，所以下面第二行需要清除一次中断标记
-                        this.thread = null;
-                        Thread.interrupted();
-                        state = IS_DONE;
-                        if (futureCallbackAndExces.size() != 0) {
-                            for (Map.Entry<FutureCallback<R>, Executor> entry : futureCallbackAndExces.entrySet()) {
-                                entry.getValue().execute(() -> entry.getKey().onSuccess(result));
-                            }
-                            futureCallbackAndExces.clear();
-                        }
-                    }
-                    this.notifyAll();
-                }
-            } catch (Throwable t) {
-                if (this.t instanceof CancellationException) {
-                    return;
-                }
-                this.t = t;
-                synchronized (this) {
+        try {
+            synchronized (this) {
+                if (this.state != IS_CANCELED) {
+                    result = callable.call();
+                    //有可能在这上下两行中间被意外中断(cancel()方法里的逻辑)，所以下面第二行需要清除一次中断标记
                     this.thread = null;
-                    state = CATCH_THROWABLE;
+                    Thread.interrupted();
+                    state = IS_DONE;
                     if (futureCallbackAndExces.size() != 0) {
                         for (Map.Entry<FutureCallback<R>, Executor> entry : futureCallbackAndExces.entrySet()) {
-                            entry.getValue().execute(() -> entry.getKey().onFailure(t));
+                            entry.getValue().execute(() -> entry.getKey().onSuccess(result));
                         }
                         futureCallbackAndExces.clear();
                     }
-                    this.notifyAll();
                 }
+                this.notifyAll();
+            }
+        } catch (Throwable t) {
+            if (this.t instanceof CancellationException) {
+                return;
+            }
+            this.t = t;
+            synchronized (this) {
+                this.thread = null;
+                state = CATCH_THROWABLE;
+                if (futureCallbackAndExces.size() != 0) {
+                    for (Map.Entry<FutureCallback<R>, Executor> entry : futureCallbackAndExces.entrySet()) {
+                        entry.getValue().execute(() -> entry.getKey().onFailure(t));
+                    }
+                    futureCallbackAndExces.clear();
+                }
+                this.notifyAll();
             }
         }
     }
@@ -169,7 +167,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
     }
 
     /**
-     * @description 添加回调方法
+     * @description 添加回调任务。回调任务是可以添加多个的,不管添加几个,都会执行
      * @param executor 异步执行任务的执行器
      * @param futureCallback 回调接口实现类
      */

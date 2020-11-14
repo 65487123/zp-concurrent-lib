@@ -14,30 +14,6 @@ public abstract class ExecutorServiceAdapter implements ExecutorService {
 
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
-    }
-
-
-
-
-
-    @Override
-    public Future<?> submit(Runnable task) {
-        return null;
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return null;
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
-    }
-
-    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
         return null;
     }
