@@ -12,6 +12,9 @@ import java.util.concurrent.*;
  */
 public class ListenableFuture<R> implements Runnable, Future<R> {
 
+    /**
+     * future的状态
+     */
     private static final int NEW = 0;
     private static final int IS_DONE = 1;
     private static final int CATCH_THROWABLE = 2;
@@ -27,6 +30,9 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
 
     private volatile int state = 0;
 
+    /**
+     * 回调任务以及相关执行器
+     */
     private Map<FutureCallback<R>,Executor> futureCallbackAndExces = new HashMap<>();
 
     public ListenableFuture(Callable<R> runnable) {

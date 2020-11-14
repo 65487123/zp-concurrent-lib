@@ -73,10 +73,10 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
      * 当前的工作线程数量
      */
     private AtomicInteger workerSum = new AtomicInteger(0);
+
     /**
      * 当前的工作线程
      */
-
     private final List<Worker> workerList = new ArrayList<>(maxNum);
 
     /**
@@ -137,7 +137,9 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                         }
                     }
                     while ((firstTask = blockingQueue.poll(timeout, TimeUnit.SECONDS)) != null);
-                    workerList.remove(this);
+                    synchronized (workerList) {
+                        workerList.remove(this);
+                    }
                     workerSum.decrementAndGet();
                     additionThreadMax = false;
                 } else {
@@ -145,32 +147,34 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                         firstTask.run();
                         firstTask = null;
                         if (shutdownNow) {
-                            workerList.remove(this);
+                            synchronized (workerList) {
+                                workerList.remove(this);
+                            }
                             return;
                         }
                         firstTask = blockingQueue.take();
                     }
                 }
             } catch (InterruptedException e) {
-                //判断是否是调用了shutdownnow()方法而导致的线程中断，如果不是，这个线程也会消失
-                if (shutdownNow) {
+                synchronized (workerList) {
                     workerList.remove(this);
-                    return;
                 }
-                workerList.remove(this);
-                if (this.additional) {
-                    workerSum.decrementAndGet();
-                    additionThreadMax = false;
-                } else {
-                    Runnable firstTask;
-                    while (!shutdown) {
-                        try {
-                            if ((firstTask = blockingQueue.poll(5, TimeUnit.SECONDS)) != null) {
-                                workerList.add(new Worker(firstTask, false));
-                                break;
+                //判断是否是调用了shutdownnow()方法而导致的线程中断
+                if (!shutdownNow) {
+                    if (this.additional) {
+                        workerSum.decrementAndGet();
+                        additionThreadMax = false;
+                    } else {
+                        Runnable firstTask;
+                        while (!shutdown) {
+                            try {
+                                if ((firstTask = blockingQueue.poll(5, TimeUnit.SECONDS)) != null) {
+                                    workerList.add(new Worker(firstTask, false));
+                                    break;
+                                }
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
                             }
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
                         }
                     }
                 }
@@ -317,9 +321,9 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
 
     @Override
     public void shutdown() {
-        this.shutdown = true;
         ThreadPoolExecutor executorService = this;
         this.execute(executorService::stop);
+        this.shutdown = true;
         synchronized (this) {
             this.notifyAll();
         }
@@ -400,6 +404,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
         this.execute(listenableFuture);
         return listenableFuture;
     }
+
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
