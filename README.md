@@ -8,6 +8,10 @@
 
 [ListenableFuture.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ListenableFuture.md)
 
+## com.lzp.util.concurrent.blockingQueue.withlock
+
+[OptimizedArrBlockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OptimizedArrBlockQueue.md)
+
 ## com.lzp.util.concurrent.blockingQueue.nolock
 [NoLockBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
 
@@ -16,7 +20,4 @@
 [DependenNoLocBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenNoLocBlocQue.md)
  
 [DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenOneTOneBlocQue.md)
-   
-## com.lzp.util.concurrent.blockingQueue.withlock
-
-[OptimizedArrBlockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OptimizedArrBlockQueue.md)    
+       
