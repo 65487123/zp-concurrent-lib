@@ -15,23 +15,42 @@ import java.util.concurrent.*;
  */
 public class Test {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        //创建线程池(com.lzp.util.concurrent.threadpool.ThreadPoolExecutor)
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, new LinkedBlockingQueue(), new ThreadFactoryImpl(""));
-        //执行submit(),我的这个线程池就会返回ListenableFuture对象
-        ListenableFuture<String> future = executorService.submit(() -> {
-            Thread.sleep(5000);
-            return "任务完成";
-        });
-        System.out.println(future.get(2,TimeUnit.SECONDS));
-        /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
-        Thread.sleep(15000);
-        System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
-        //now = System.currentTimeMillis();
-        for (int i = 0; i < 50000; i++) {
-            executorService.execute(runnable);
+        LinkedBlockingQueue arrayBlockingQueue = new LinkedBlockingQueue();
+        CountDownLatch countDownLatch = new CountDownLatch(800000);
+        long now = System.currentTimeMillis();
+        new Thread(() -> put(arrayBlockingQueue)).start();new Thread(() -> put(arrayBlockingQueue)).start();
+        new Thread(() -> put(arrayBlockingQueue)).start();new Thread(() -> put(arrayBlockingQueue)).start();
+        new Thread(() -> {
+            for (int i = 0; i <800000 ; i++) {
+                try {
+                    arrayBlockingQueue.take();
+                } catch (InterruptedException ignored){}
+                countDownLatch.countDown();
+            }
+        }).start();
+        countDownLatch.await();
+        System.out.println(System.currentTimeMillis()-now);
+    }
+
+
+    static void put(LinkedBlockingQueue arrayBlockingQueue){
+        for (int i = 0; i <200000 ; i++) {
+            try {
+                arrayBlockingQueue.put(String.valueOf(i));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-        executorService.shutdown();
-        System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());*/
+    }
+
+    static void put(NoLockBlockingQueue arrayBlockingQueue,int threadId){
+        for (int i = 0; i <200000 ; i++) {
+            try {
+                arrayBlockingQueue.put(String.valueOf(i),threadId);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
