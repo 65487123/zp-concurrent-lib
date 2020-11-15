@@ -11,15 +11,14 @@
 ### 性能测试结果
     
 ### 一个生产线程对一个消费线程
-
 #### ArrayBlockingQueue
+![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro.png)
+![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro2.png)
+![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro3.png)
+#### 这个队列
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oao.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oao2.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oao3.png)
-#### 这个队列
-![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro.png)
-![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro2.png)
-![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arro3.png)    
 ### 四个生产线程对一个消费线程
 #### ArrayBlockingQueue
 ![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arr.png)
