@@ -3,7 +3,6 @@ package com.lzp.util.concurrent.threadpool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Description:可以添加异步回调方法的Future
@@ -27,14 +26,12 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
 
     private volatile Throwable t;
 
-    private List<Thread> waitThreads = new ArrayList<>();
-
     private volatile Thread thread;
 
     private volatile int state = 0;
 
     /**
-     * 回调任务以及相关执行器
+     * 回调任务
      */
     private List<FutureCallback<R>> futureCallbacks = new ArrayList<>();
 
@@ -54,11 +51,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                 Thread.interrupted();
                 state = IS_DONE;
                 synchronized (this) {
-                    if (waitThreads.size() != 0) {
-                        for (Thread thread : waitThreads) {
-                            LockSupport.unpark(thread);
-                        }
-                    }
+                    this.notifyAll();
                     if (futureCallbacks.size() != 0) {
                         for (FutureCallback<R> futureCallback : futureCallbacks) {
                             futureCallback.onSuccess(result);
@@ -76,11 +69,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
             Thread.interrupted();
             state = CATCH_THROWABLE;
             synchronized (this) {
-                if (waitThreads.size() != 0) {
-                    for (Thread thread : waitThreads) {
-                        LockSupport.unpark(thread);
-                    }
-                }
+                this.notifyAll();
                 if (futureCallbacks.size() != 0) {
                     for (FutureCallback<R> futureCallback : futureCallbacks) {
                         futureCallback.onFailure(t);
@@ -149,12 +138,8 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
             throw (CancellationException) t;
         }
         synchronized (this) {
-            this.waitThreads.add(Thread.currentThread());
             while (this.state < IS_DONE) {
-                LockSupport.park();
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
+                this.wait();
             }
         }
         if (this.state == CATCH_THROWABLE) {
@@ -169,16 +154,12 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
         if (this.state == IS_CANCELED) {
             throw (CancellationException) t;
         }
-        long remainingTime = unit.toNanos(timeout);
+        long remainingTime = unit.toMillis(timeout);
         long deadLine = System.currentTimeMillis() + remainingTime;
         synchronized (this) {
-            this.waitThreads.add(Thread.currentThread());
             while (this.state < IS_DONE && remainingTime > 0) {
-                LockSupport.parkNanos(remainingTime);
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-                remainingTime = deadLine - System.nanoTime();
+                this.wait(remainingTime);
+                remainingTime = deadLine - System.currentTimeMillis();
             }
             if (this.state < IS_DONE) {
                 throw new TimeoutException();

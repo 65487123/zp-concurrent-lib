@@ -22,20 +22,7 @@ public class Test {
             Thread.sleep(5000);
             return "任务完成";
         });
-        //添加异步回调任务
-        future.addCallback(new FutureCallback<String>() {
-            @Override
-            public void onSuccess(String s) {
-                System.out.println(System.currentTimeMillis() + " " + s);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                System.out.println(t.toString());
-            }
-        });
-        //执行主线程的其他事情
-        System.out.println(System.currentTimeMillis() + " 执行主线程的其他事情");
+        System.out.println(future.get(2,TimeUnit.SECONDS));
         /*System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
         Thread.sleep(15000);
         System.out.println(((ThreadPoolExecutor)executorService).getPoolSize());
