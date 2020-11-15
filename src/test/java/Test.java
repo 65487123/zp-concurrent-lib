@@ -15,11 +15,13 @@ import java.util.concurrent.*;
  */
 public class Test {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        LinkedBlockingQueue arrayBlockingQueue = new LinkedBlockingQueue();
+        NoLockBlockingQueue arrayBlockingQueue = new NoLockBlockingQueue(500000,8);
         CountDownLatch countDownLatch = new CountDownLatch(800000);
         long now = System.currentTimeMillis();
-        new Thread(() -> put(arrayBlockingQueue)).start();new Thread(() -> put(arrayBlockingQueue)).start();
-        new Thread(() -> put(arrayBlockingQueue)).start();new Thread(() -> put(arrayBlockingQueue)).start();
+        new Thread(() -> put(arrayBlockingQueue,0)).start();new Thread(() -> put(arrayBlockingQueue,1)).start();
+        new Thread(() -> put(arrayBlockingQueue,2)).start();new Thread(() -> put(arrayBlockingQueue,3)).start();
+        new Thread(() -> put(arrayBlockingQueue,4)).start();new Thread(() -> put(arrayBlockingQueue,5)).start();
+        new Thread(() -> put(arrayBlockingQueue,6)).start();new Thread(() -> put(arrayBlockingQueue,7)).start();
         new Thread(() -> {
             for (int i = 0; i <800000 ; i++) {
                 try {
@@ -33,8 +35,8 @@ public class Test {
     }
 
 
-    static void put(LinkedBlockingQueue arrayBlockingQueue){
-        for (int i = 0; i <200000 ; i++) {
+    static void put(ArrayBlockingQueue arrayBlockingQueue){
+        for (int i = 0; i <100000 ; i++) {
             try {
                 arrayBlockingQueue.put(String.valueOf(i));
             } catch (InterruptedException e) {
@@ -44,7 +46,7 @@ public class Test {
     }
 
     static void put(NoLockBlockingQueue arrayBlockingQueue,int threadId){
-        for (int i = 0; i <200000 ; i++) {
+        for (int i = 0; i <100000 ; i++) {
             try {
                 arrayBlockingQueue.put(String.valueOf(i),threadId);
             } catch (InterruptedException e) {
