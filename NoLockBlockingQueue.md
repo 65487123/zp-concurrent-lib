@@ -8,8 +8,21 @@
     自测性能是ArrayBlockingQueue的7倍以上(四生产线程，1消费线程，关闭JIT）
     
 ##### 自测截图
-    
-
+##### 启动参数及测试方法调用的方法
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/param.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/method.png)
+##### 这个队列
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/mine1.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/mine2.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/mine3.png)
+![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/mine4.png)
+##### ArrayBlockingQueue
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk1.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk2.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk3.png)
+![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk4.png)
+##### 总结
+这是四个生产线程的结果，如果生产线程更多，差距更大(ArrayBlockingQueue读写用的一把锁)
 ##### 缺点
     比较占资源（CPU时间片、CPU缓存）。所以并不适合所有场景。
     比如下面这些场景:
