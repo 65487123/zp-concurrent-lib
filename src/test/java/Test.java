@@ -22,7 +22,7 @@ public class Test {
     static Object[]  d = new Object[ThreadLocalRandom.current().nextInt(10000)];
     static int r = d.length;
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        BlockingQueue blockingQueue = new OptimizedArrBlockQueue(100000);
+        BlockingQueue blockingQueue = new ArrayBlockingQueue(100000);
         CountDownLatch countDownLatch = new CountDownLatch(2000000);
         long now = System.currentTimeMillis();
         new Thread(() -> put(blockingQueue)).start();
