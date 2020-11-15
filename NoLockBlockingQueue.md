@@ -21,8 +21,8 @@
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk2.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk3.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk4.png)
-##### 总结
-这是四个生产线程的结果，如果生产线程更多，差距更大(ArrayBlockingQueue读写用的一把锁)
+
+
 ##### 缺点
     比较占资源（CPU时间片、CPU缓存）。所以并不适合所有场景。
     比如下面这些场景:
