@@ -58,7 +58,9 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
 
     @Override
     public void put(E obj) throws InterruptedException {
-
+        if (obj == null){
+            throw new NullPointerException();
+        }
         int p = head[11]++ & m;
         while (array[p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素

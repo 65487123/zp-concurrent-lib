@@ -53,6 +53,9 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
 
     @Override
     public void put(E obj, int threadId) throws InterruptedException {
+        if (obj==null){
+            throw new NullPointerException();
+        }
         int p = head[16 * threadId]++ & m;
         while (array[threadId][p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素

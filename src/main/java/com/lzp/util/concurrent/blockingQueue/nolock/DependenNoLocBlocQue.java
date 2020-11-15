@@ -53,6 +53,9 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
 
     @Override
     public void put(E obj, int threadId) throws InterruptedException {
+        if (obj == null){
+            throw new NullPointerException();
+        }
         int p = head[16 * threadId]++ & m;
         while (array[threadId][p] != null) {
             //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况

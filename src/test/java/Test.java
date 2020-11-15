@@ -1,10 +1,12 @@
 import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
+import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.threadpool.*;
 import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -14,29 +16,31 @@ import java.util.concurrent.*;
  * @date: 2020/8/9 11:46
  */
 public class Test {
+    static volatile int a = ThreadLocalRandom.current().nextInt(10000);
+    static volatile int b = ThreadLocalRandom.current().nextInt(10000);
+    static AtomicInteger c = new AtomicInteger();
+    static Object[]  d = new Object[ThreadLocalRandom.current().nextInt(10000)];
+    static int r = d.length;
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        NoLockBlockingQueue arrayBlockingQueue = new NoLockBlockingQueue(500000,8);
-        CountDownLatch countDownLatch = new CountDownLatch(800000);
+        BlockingQueue blockingQueue = new OptimizedArrBlockQueue(100000);
+        CountDownLatch countDownLatch = new CountDownLatch(2000000);
         long now = System.currentTimeMillis();
-        new Thread(() -> put(arrayBlockingQueue,0)).start();new Thread(() -> put(arrayBlockingQueue,1)).start();
-        new Thread(() -> put(arrayBlockingQueue,2)).start();new Thread(() -> put(arrayBlockingQueue,3)).start();
-        new Thread(() -> put(arrayBlockingQueue,4)).start();new Thread(() -> put(arrayBlockingQueue,5)).start();
-        new Thread(() -> put(arrayBlockingQueue,6)).start();new Thread(() -> put(arrayBlockingQueue,7)).start();
+        new Thread(() -> put(blockingQueue)).start();
         new Thread(() -> {
-            for (int i = 0; i <800000 ; i++) {
+            for (int i = 0; i <2000000 ; i++) {
                 try {
-                    arrayBlockingQueue.take();
-                } catch (InterruptedException ignored){}
+                    blockingQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 countDownLatch.countDown();
             }
         }).start();
         countDownLatch.await();
-        System.out.println(System.currentTimeMillis()-now);
+        System.out.println(System.currentTimeMillis() - now);
     }
-
-
-    static void put(ArrayBlockingQueue arrayBlockingQueue){
-        for (int i = 0; i <100000 ; i++) {
+    static void put(BlockingQueue arrayBlockingQueue){
+        for (int i = 0; i <2000000 ; i++) {
             try {
                 arrayBlockingQueue.put(String.valueOf(i));
             } catch (InterruptedException e) {
@@ -45,10 +49,10 @@ public class Test {
         }
     }
 
-    static void put(NoLockBlockingQueue arrayBlockingQueue,int threadId){
-        for (int i = 0; i <100000 ; i++) {
+    static void put(OneToOneBlockingQueue arrayBlockingQueue){
+        for (int i = 0; i <800000 ; i++) {
             try {
-                arrayBlockingQueue.put(String.valueOf(i),threadId);
+                arrayBlockingQueue.put(String.valueOf(i));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
