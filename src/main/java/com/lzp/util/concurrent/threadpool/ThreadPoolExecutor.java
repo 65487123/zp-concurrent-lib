@@ -155,12 +155,13 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                         firstTask = blockingQueue.take();
                     }
                 }
-            } catch (InterruptedException e) {
+            } catch (Throwable e) {
                 synchronized (workerList) {
                     workerList.remove(this);
                 }
                 //判断是否是调用了shutdownnow()方法而导致的线程中断
                 if (!shutdownNow) {
+                    e.printStackTrace();
                     if (this.additional) {
                         workerSum.decrementAndGet();
                         additionThreadMax = false;
@@ -172,9 +173,7 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                                     workerList.add(new Worker(firstTask, false));
                                     break;
                                 }
-                            } catch (InterruptedException ex) {
-                                ex.printStackTrace();
-                            }
+                            } catch (InterruptedException ignored) { }
                         }
                     }
                 }

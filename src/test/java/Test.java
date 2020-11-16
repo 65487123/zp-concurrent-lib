@@ -19,10 +19,44 @@ public class Test {
     static volatile int a = ThreadLocalRandom.current().nextInt(10000);
     static volatile int b = ThreadLocalRandom.current().nextInt(10000);
     static AtomicInteger c = new AtomicInteger();
-    static Object[]  d = new Object[ThreadLocalRandom.current().nextInt(10000)];
+    static Object[] d = new Object[ThreadLocalRandom.current().nextInt(10000)];
     static int r = d.length;
+
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        BlockingQueue blockingQueue = new ArrayBlockingQueue(100000);
+        ThreadPoolExecutor executorService = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(1, 2, 0, new ArrayBlockingQueue(1), new ThreadFactoryImpl(""));
+        ListenableFuture listenableFuture = executorService.submit(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                Thread.sleep(3000);
+                return "1234";
+            }
+        });
+        listenableFuture.addCallback(new FutureCallback() {
+            @Override
+            public void onSuccess(Object o) {
+                throw new NullPointerException();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
+        System.out.println(listenableFuture.get());
+        System.out.println(listenableFuture.isDone());
+        /*listenableFuture.addCallback(new FutureCallback() {
+            @Override
+            public void onSuccess(Object o) {
+                throw new NullPointerException();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });*/
+        //System.out.println(listenableFuture.get());
+        /*BlockingQueue blockingQueue = new ArrayBlockingQueue(100000);
         CountDownLatch countDownLatch = new CountDownLatch(2000000);
         long now = System.currentTimeMillis();
         new Thread(() -> put(blockingQueue)).start();
@@ -37,7 +71,7 @@ public class Test {
             }
         }).start();
         countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);
+        System.out.println(System.currentTimeMillis() - now);*/
     }
     static void put(BlockingQueue arrayBlockingQueue){
         for (int i = 0; i <2000000 ; i++) {

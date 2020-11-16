@@ -54,7 +54,11 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                     this.notifyAll();
                     if (futureCallbacks.size() != 0) {
                         for (FutureCallback<R> futureCallback : futureCallbacks) {
-                            futureCallback.onSuccess(result);
+                            try {
+                                futureCallback.onSuccess(result);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
                         }
                         futureCallbacks.clear();
                     }
@@ -72,7 +76,11 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                 this.notifyAll();
                 if (futureCallbacks.size() != 0) {
                     for (FutureCallback<R> futureCallback : futureCallbacks) {
-                        futureCallback.onFailure(t);
+                        try {
+                            futureCallback.onFailure(t);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
                     }
                     futureCallbacks.clear();
                 }
@@ -111,7 +119,11 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                     this.state = IS_CANCELED;
                     if (futureCallbacks.size() != 0) {
                         for (FutureCallback<R> futureCallback : futureCallbacks) {
-                            futureCallback.onFailure(t);
+                            try {
+                                futureCallback.onFailure(t);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
                         }
                         futureCallbacks.clear();
                     }
