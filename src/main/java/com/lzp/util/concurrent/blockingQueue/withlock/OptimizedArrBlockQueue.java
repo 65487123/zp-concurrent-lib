@@ -1,9 +1,10 @@
 package com.lzp.util.concurrent.blockingQueue.withlock;
 
-import java.util.*;
+import java.util.AbstractQueue;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Description: {@link java.util.concurrent.ArrayBlockingQueue}读和写用的是同一把锁，
@@ -14,7 +15,7 @@ import java.util.concurrent.locks.LockSupport;
  * @date: 2020/11/10 17:15
  */
 public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
-        implements BlockingQueue<E>, java.io.Serializable{
+        implements BlockingQueue<E>, java.io.Serializable {
 
     /**
      * 存元素的容器，并且作为读锁。 写锁
@@ -31,12 +32,11 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
 
     private final Object putWatingLock = new Object();
 
-    private final Object takeWatingLock = new Object() ;
+    private final Object takeWatingLock = new Object();
 
-    public OptimizedArrBlockQueue(int capacity){
+    public OptimizedArrBlockQueue(int capacity) {
         this.items = new Object[capacity];
     }
-
 
 
     @Override
@@ -45,12 +45,16 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
     }
 
     @Override
-    public int size() {
-        int size;
-        if ((size = takeIndex - putIndex) < 0) {
-            size = items.length - size;
+    public synchronized int size() {
+        synchronized (items) {
+            int temp;
+            if ((temp = takeIndex - putIndex) < 0) {
+                return -temp;
+            } else if (temp == 0) {
+                return items[putIndex] == null ? 0 : items.length;
+            }
+            return items.length - temp;
         }
-        return size;
     }
 
     @Override
@@ -64,21 +68,29 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                 putWatingLock.wait();
             }
         }
-        items[putIndex++] = e;
-        synchronized (takeWatingLock) {
-            if (takeThreadsIsWaiting) {
-                takeThreadsIsWaiting = false;
-                takeWatingLock.notify();
-            }
-        }
-        if (putIndex == items.length) {
-            putIndex = 0;
-        }
+        enqueue(e);
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
+    public synchronized boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        if (e == null) {
+            throw new NullPointerException();
+        }
+        long remainingTime = unit.toMillis(timeout);
+        long deadline = System.currentTimeMillis() + remainingTime;
+        while (items[putIndex] != null && remainingTime > 0) {
+            synchronized (putWatingLock) {
+                putThreadsIsWaiting = true;
+                putWatingLock.wait(remainingTime);
+                remainingTime = deadline - System.currentTimeMillis();
+            }
+        }
+        if (items[putIndex] != null) {
+            putThreadsIsWaiting = false;
+            return false;
+        }
+        enqueue(e);
+        return true;
     }
 
     @Override
@@ -91,28 +103,44 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                     takeWatingLock.wait();
                 }
             }
-            items[takeIndex++] = null;
-            synchronized (putWatingLock) {
-                if (putThreadsIsWaiting) {
-                    putThreadsIsWaiting = false;
-                    putWatingLock.notify();
-                }
-            }
-            if (takeIndex == items.length) {
-                takeIndex = 0;
-            }
+            dequeue();
             return e;
         }
     }
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
+        synchronized (items) {
+            long remainingTime = unit.toMillis(timeout);
+            long deadline = System.currentTimeMillis() + remainingTime;
+            E e;
+            while ((e = (E) items[takeIndex]) == null && remainingTime > 0) {
+                synchronized (takeWatingLock) {
+                    takeThreadsIsWaiting = true;
+                    takeWatingLock.wait(remainingTime);
+                    remainingTime = deadline - System.currentTimeMillis();
+                }
+            }
+            if (e == null) {
+                return null;
+            }
+            dequeue();
+            return e;
+        }
     }
 
     @Override
-    public int remainingCapacity() {
-        return 0;
+    public synchronized int remainingCapacity() {
+        synchronized (items) {
+            int temp;
+            if ((temp = putIndex - takeIndex) > 0) {
+                return items.length - temp;
+            } else if (temp == 0) {
+                return items[putIndex] == null ? items.length : 0;
+            } else {
+                return -temp;
+            }
+        }
     }
 
     @Override
@@ -126,17 +154,57 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
     }
 
     @Override
-    public boolean offer(E e) {
-        return false;
+    public synchronized boolean offer(E e) {
+        if (e == null) {
+            throw new NullPointerException();
+        }
+        if (items[putIndex] != null) {
+            return false;
+        }
+        enqueue(e);
+        return true;
     }
 
     @Override
     public E poll() {
-        return null;
+        synchronized (items) {
+            E e;
+            if ((e = (E) items[takeIndex]) == null) {
+                return null;
+            }
+            dequeue();
+            return e;
+        }
     }
 
     @Override
     public E peek() {
         return null;
+    }
+
+    private void enqueue(E e) {
+        items[putIndex++] = e;
+        synchronized (takeWatingLock) {
+            if (takeThreadsIsWaiting) {
+                takeThreadsIsWaiting = false;
+                takeWatingLock.notify();
+            }
+        }
+        if (putIndex == items.length) {
+            putIndex = 0;
+        }
+    }
+
+    private void dequeue() {
+        items[takeIndex++] = null;
+        synchronized (putWatingLock) {
+            if (putThreadsIsWaiting) {
+                putThreadsIsWaiting = false;
+                putWatingLock.notify();
+            }
+        }
+        if (takeIndex == items.length) {
+            takeIndex = 0;
+        }
     }
 }

@@ -23,41 +23,47 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 2, 0, new ArrayBlockingQueue(1), new ThreadFactoryImpl(""));
-        
-        System.out.println(executorService.getPoolSize());
-
-        Thread.sleep(2000);
-        System.out.println(executorService.getPoolSize());
-        /*listenableFuture.addCallback(new FutureCallback() {
-            @Override
-            public void onSuccess(Object o) {
-                throw new NullPointerException();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });*/
-        //System.out.println(listenableFuture.get());
-        /*BlockingQueue blockingQueue = new ArrayBlockingQueue(100000);
-        CountDownLatch countDownLatch = new CountDownLatch(2000000);
-        long now = System.currentTimeMillis();
-        new Thread(() -> put(blockingQueue)).start();
-        new Thread(() -> {
-            for (int i = 0; i <2000000 ; i++) {
-                try {
-                    blockingQueue.take();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, new OptimizedArrBlockQueue(10000000), new ThreadFactoryImpl(""));
+        BlockingQueue blockingQueue = new OptimizedArrBlockQueue(5);
+        CountDownLatch countDownLatch = new CountDownLatch(10000000);
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.take();
+        blockingQueue.take();
+        blockingQueue.take();
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        blockingQueue.put("1");
+        System.out.println(blockingQueue.size());
+        System.out.println(blockingQueue.remainingCapacity());
+        /*for (int i = 0; i < 20000000; i++) {
+            executorService.execute(() -> {
+                sum();
                 countDownLatch.countDown();
-            }
-        }).start();
+            });
+        }*/
         countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);*/
+        //System.out.println(System.currentTimeMillis() - now);
+        executorService.shutdown();
     }
+
     static void put(BlockingQueue arrayBlockingQueue){
         for (int i = 0; i <2000000 ; i++) {
             try {
