@@ -57,7 +57,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                             try {
                                 futureCallback.onSuccess(result);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                e.printStackTrace(System.err);
                             }
                         }
                         futureCallbacks.clear();
@@ -79,7 +79,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                         try {
                             futureCallback.onFailure(t);
                         } catch (Throwable e) {
-                            e.printStackTrace();
+                            e.printStackTrace(System.err);
                         }
                     }
                     futureCallbacks.clear();
@@ -122,7 +122,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                             try {
                                 futureCallback.onFailure(t);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                e.printStackTrace(System.err);
                             }
                         }
                         futureCallbacks.clear();

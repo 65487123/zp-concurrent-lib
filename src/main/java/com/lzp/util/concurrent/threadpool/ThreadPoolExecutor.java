@@ -159,9 +159,13 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 synchronized (workerList) {
                     workerList.remove(this);
                 }
-                //判断是否是调用了shutdownnow()方法而导致的线程中断
+                //判断是否是调用了shutdownNow()方法而导致的线程中断
                 if (!shutdownNow) {
-                    e.printStackTrace();
+                    Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+                    //如果execute的任务抛出了未捕捉的异常，可以通过线程工厂创建线程的时候设置UncaughtExceptionHandler来捕捉
+                    if ((uncaughtExceptionHandler = this.thread.getUncaughtExceptionHandler()) != null) {
+                        uncaughtExceptionHandler.uncaughtException(this.thread, e);
+                    }
                     if (this.additional) {
                         workerSum.decrementAndGet();
                         additionThreadMax = false;
