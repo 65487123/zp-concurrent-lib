@@ -18,13 +18,13 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
 
     /**
-     * 存元素的容器，并且作为读锁。 写锁
+     * 存元素的容器，并且作为读锁。
      */
     private final Object[] items;
 
-    private volatile int takeIndex;
+    private int takeIndex;
 
-    private volatile int putIndex;
+    private int putIndex;
 
     private boolean putThreadsIsWaiting;
 
