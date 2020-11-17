@@ -23,36 +23,20 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, new OptimizedArrBlockQueue(10000000), new ThreadFactoryImpl(""));
+        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(4, 4, 0, new ArrayBlockingQueue(10000000), new ThreadFactoryImpl(""));
         BlockingQueue blockingQueue = new OptimizedArrBlockQueue(5);
         CountDownLatch countDownLatch = new CountDownLatch(10000000);
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.take();
-        blockingQueue.take();
-        blockingQueue.take();
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
-        blockingQueue.put("1");
-        System.out.println(blockingQueue.size());
-        System.out.println(blockingQueue.remainingCapacity());
+        long now = System.currentTimeMillis();
+        for (int i = 0; i <10000000; i++) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    sum();
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
         /*for (int i = 0; i < 20000000; i++) {
             executorService.execute(() -> {
                 sum();
@@ -60,7 +44,7 @@ public class Test {
             });
         }*/
         countDownLatch.await();
-        //System.out.println(System.currentTimeMillis() - now);
+        System.out.println(System.currentTimeMillis() - now);
         executorService.shutdown();
     }
 
