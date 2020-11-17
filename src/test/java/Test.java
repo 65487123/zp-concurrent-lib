@@ -2,6 +2,7 @@ import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
+import com.lzp.util.concurrent.latch.CountDownLatch;
 import com.lzp.util.concurrent.threadpool.*;
 import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
@@ -23,29 +24,55 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(4, 4, 0, new ArrayBlockingQueue(10000000), new ThreadFactoryImpl(""));
-        BlockingQueue blockingQueue = new OptimizedArrBlockQueue(5);
-        CountDownLatch countDownLatch = new CountDownLatch(10000000);
+        //com.lzp.util.concurrent.threadpool.ThreadPoolExecutor executorService = new ThreadPoolExecutor(4, 4, 0, new ArrayBlockingQueue(10000000), new ThreadFactoryImpl(""));
+        //BlockingQueue blockingQueue = new OptimizedArrBlockQueue(5);
+        com.lzp.util.concurrent.latch.CountDownLatch countDownLatch = new com.lzp.util.concurrent.latch.CountDownLatch(16000000);
+        //java.util.concurrent.CountDownLatch countDownLatch = new java.util.concurrent.CountDownLatch(16000000);
         long now = System.currentTimeMillis();
-        for (int i = 0; i <10000000; i++) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    sum();
-                    countDownLatch.countDown();
-                }
-            });
-        }
-
-        /*for (int i = 0; i < 20000000; i++) {
-            executorService.execute(() -> {
-                sum();
+        new Thread(() -> {
+            for (int i = 0; i < 3000000; i++) {
                 countDownLatch.countDown();
-            });
-        }*/
-        countDownLatch.await();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                countDownLatch.countDown();
+            }
+        }).start();
+        System.out.println(countDownLatch.await(1,TimeUnit.SECONDS));
         System.out.println(System.currentTimeMillis() - now);
-        executorService.shutdown();
+        System.out.println(countDownLatch.getCount());
+        //executorService.shutdown();
     }
 
     static void put(BlockingQueue arrayBlockingQueue){
