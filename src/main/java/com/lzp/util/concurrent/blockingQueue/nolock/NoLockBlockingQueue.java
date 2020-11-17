@@ -50,7 +50,8 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
      */
     private final int m;
 
-    private int[] padding = new int[11];
+    private long padding1, padding2, padding3, padding4, padding5;
+    private int padding6;
 
     private int[] head;
     private int[] tail;
