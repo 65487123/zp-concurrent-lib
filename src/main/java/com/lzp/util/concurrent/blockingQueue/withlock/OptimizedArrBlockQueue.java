@@ -22,9 +22,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Description: {@link java.util.concurrent.ArrayBlockingQueue}读和写用的是同一把锁，
- * 这个队列读和写用的是不同的锁。用的是jdk自带的synchronized锁，读锁锁的是当前队列对象，写锁锁的是items。
- * 经过实测，jdk优化以后的synchronized锁性能比JUC下面的锁要好
+ * Description:
+ * 相比{@link java.util.concurrent.ArrayBlockingQueue}优势
+ * 性能高：
+ * 1、ArrayBlockingQueue取元素和放元素用的是同一把锁，多线程同时读写时严重影响性能
+ * 而我这个这个队列取元素和放元素锁的是不同的对象
+ * 2、ArrayBlockingQueue用的是JUC里的Lock锁，而我这个用的是synchronized锁，
+ * 经过实测，synchronized(jdk1.6以后)性能比JUC里的lock锁性能高
+ *
  *
  * @author: Zeping Lu
  * @date: 2020/11/10 17:15
