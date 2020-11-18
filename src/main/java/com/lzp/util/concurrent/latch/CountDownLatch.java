@@ -15,8 +15,6 @@
 
 package com.lzp.util.concurrent.latch;
 
-import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
