@@ -32,7 +32,9 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @date: 2020/11/18 15:54
  */
 public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
-    //Node<K, V>[] table
+    private Node<K, V>[] table;
+    private static final float LOAD_FACTOR = 0.75f;
+    private int m;
 
     static class Node<K, V> implements Map.Entry<K, V> {
         final int hash;
@@ -109,6 +111,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
                 MAXIMUM_CAPACITY :
                 tableSizeFor(initialCapacity));
         //this.sizeCtl = cap;
+        table = new Node[cap];
+        m = cap - 1;
     }
 
     /**
@@ -123,6 +127,19 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
         n |= n >>> 8;
         n |= n >>> 16;
         return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+
+    private int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+
+    @Override
+    public V put(K key, V value) {
+        if (table[hash(key.hashCode()) & m] == null) {
+
+        }
+        return null;
     }
 
     @Override
