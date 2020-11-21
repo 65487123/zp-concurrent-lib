@@ -29,46 +29,47 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        CountDownLatch countDownLatch = new CountDownLatch(1200000);
-        Map map = new ConcurrentHashMap(1500000);
+        CountDownLatch countDownLatch = new CountDownLatch(12000000);
+        Map map = new ConcurrentHashMap(15000000);
         long now = System.currentTimeMillis();
         new Thread(() -> {
-            for (int i = 0; i < 200000; i++) {
+            for (int i = 0; i < 2000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 200000; i < 400000; i++) {
+            for (int i = 2000000; i < 4000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 400000; i < 600000; i++) {
+            for (int i = 4000000; i < 6000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 600000; i < 800000; i++) {
+            for (int i = 6000000; i < 8000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 800000; i < 1000000; i++) {
+            for (int i = 8000000; i < 10000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 1000000; i < 1200000; i++) {
+            for (int i = 10000000; i < 12000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         countDownLatch.await();
+
         System.out.println(System.currentTimeMillis() - now);
         System.out.println(map.size());
     }

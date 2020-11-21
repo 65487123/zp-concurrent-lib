@@ -49,71 +49,28 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
     private Node<K, V>[] table;
     private int m;
     static class Node<K, V> implements Map.Entry<K, V> {
-        int hash;
         volatile K key;
         volatile V val;
         volatile Node<K, V> next;
 
-        Node(int hash, K key, V val, Node<K, V> next) {
-            this.hash = hash;
+        Node(K key, V val, Node<K, V> next) {
             this.key = key;
             this.val = val;
             this.next = next;
         }
 
-        Node() {
+        @Override
+        public K getKey() {
+            return null;
         }
 
         @Override
-        public final K getKey() {
-            return key;
+        public V getValue() {
+            return null;
         }
 
         @Override
-        public final V getValue() {
-            return val;
-        }
-
-        @Override
-        public final int hashCode() {
-            return key.hashCode() ^ val.hashCode();
-        }
-
-        @Override
-        public final String toString() {
-            return key + "=" + val;
-        }
-
-        @Override
-        public final V setValue(V value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            Object k, v, u;
-            Map.Entry<?, ?> e;
-            return ((o instanceof Map.Entry) &&
-                    (k = (e = (Map.Entry<?, ?>) o).getKey()) != null &&
-                    (v = e.getValue()) != null &&
-                    (k == key || k.equals(key)) &&
-                    (v == (u = val) || v.equals(u)));
-        }
-
-        /**
-         * Virtualized support for map.get(); overridden in subclasses.
-         */
-        Node<K, V> find(int h, Object k) {
-            Node<K, V> e = this;
-            if (k != null) {
-                do {
-                    K ek;
-                    if (e.hash == h &&
-                            ((ek = e.key) == k || (ek != null && k.equals(ek)))) {
-                        return e;
-                    }
-                } while ((e = e.next) != null);
-            }
+        public V setValue(V value) {
             return null;
         }
     }
@@ -140,9 +97,6 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
                 MAXIMUM_CAPACITY :
                 tableSizeFor(capacity));
         table = new Node[cap];
-        for (int i = 0; i <table.length; i++) {
-            table[i] = new Node<>();
-        }
         m = cap - 1;
     }
 
@@ -167,9 +121,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
 
     @Override
     public V put(K key, V value) {
-        int h, i;
-        if (table[i = ((h = hash(key.hashCode())) & m)] == null) {
-            Node<K, V> newNode = new Node<>(h, key, value, null);
+        int i;
+        if (table[i = (hash(key.hashCode()) & m)] == null) {
+            Node<K, V> newNode = new Node(key, value, null);
             if (!u.compareAndSwapObject(table, BASE + i * SCALE, null, newNode)) {
                 Node<K, V> node;
                 synchronized (node = table[i]) {
@@ -211,7 +165,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
                         return old;
                     }
                 }
-                node.next = new Node<>(h, key, value, null);
+                node.next = new Node<>(key, value, null);
                 return null;
             }
         }
