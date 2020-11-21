@@ -1,4 +1,3 @@
-package com.lzp.util.concurrent.map;
 /* Copyright zeping lu
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,12 @@ package com.lzp.util.concurrent.map;
  *  limitations under the License.
  */
 
+package com.lzp.util.concurrent.map;
+
+import sun.misc.Unsafe;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
@@ -27,18 +30,27 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
 
 /**
  * Description:线程安全的Map
+ * 比 {@link java.util.concurrent.ConcurrentHashMap} 性能高
+ *
+ * 主要区别:
+ * 1、消除了树化以及树退化等操作:因为达到树化的概率很低，所以没必要为了这么低的概率去优化(增加红黑树结构，需要增加类型判断）。
+ * 并且树化只是增加了查性能，写性能会降低
+ * 2、没有扩容机制,所以要求使用者预估最大存储键值对数量(ConcurrentHashMap使用时也建议带参数初始化避免扩容,但是就算不去
+ * 扩容，put过程避免不了检查是否在扩容的操作）
+ * 4、优化了很多细节，减少不必要的操作
  *
  * @author: Zeping Lu
  * @date: 2020/11/18 15:54
  */
 public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
+    private Unsafe u;
+    private final long BASE;
+    private final long SCALE;
     private Node<K, V>[] table;
-    private static final float LOAD_FACTOR = 0.75f;
     private int m;
-
     static class Node<K, V> implements Map.Entry<K, V> {
-        final int hash;
-        final K key;
+        int hash;
+        volatile K key;
         volatile V val;
         volatile Node<K, V> next;
 
@@ -47,6 +59,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
             this.key = key;
             this.val = val;
             this.next = next;
+        }
+
+        Node() {
         }
 
         @Override
@@ -103,15 +118,31 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
         }
     }
 
-    public ConcurrentHashMap(int initialCapacity) {
-        if (initialCapacity < 0) {
+    /**
+     * 构造方法，必须指定容量。需要使用者根据业务场景预估最大键值对数量,设置合理参数以达到最好性能
+     *
+     * @param capacity 数组容量
+     */
+    public ConcurrentHashMap(int capacity) {
+        if (capacity < 0) {
             throw new IllegalArgumentException();
         }
-        int cap = ((initialCapacity >= (MAXIMUM_CAPACITY >>> 1)) ?
+        try {
+            Constructor<Unsafe> constructor = Unsafe.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            u = constructor.newInstance();
+        } catch (Exception ignored) {
+        }
+        assert u != null;
+        BASE = u.arrayBaseOffset(Object[].class);
+        SCALE = u.arrayIndexScale(Object[].class);
+        int cap = ((capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
                 MAXIMUM_CAPACITY :
-                tableSizeFor(initialCapacity));
-        //this.sizeCtl = cap;
+                tableSizeFor(capacity));
         table = new Node[cap];
+        for (int i = 0; i <table.length; i++) {
+            table[i] = new Node<>();
+        }
         m = cap - 1;
     }
 
@@ -119,7 +150,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
      * Returns a power of two table size for the given desired capacity.
      * See Hackers Delight, sec 3.2
      */
-    private static final int tableSizeFor(int c) {
+    private int tableSizeFor(int c) {
         int n = c - 1;
         n |= n >>> 1;
         n |= n >>> 2;
@@ -136,10 +167,100 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
 
     @Override
     public V put(K key, V value) {
-        if (table[hash(key.hashCode()) & m] == null) {
-
+        int h, i;
+        if (table[i = ((h = hash(key.hashCode())) & m)] == null) {
+            Node<K, V> newNode = new Node<>(h, key, value, null);
+            if (!u.compareAndSwapObject(table, BASE + i * SCALE, null, newNode)) {
+                Node<K, V> node;
+                synchronized (node = table[i]) {
+                    if (node.key == null) {
+                        node.key = key;
+                        node.val = value;
+                        return null;
+                    } else if (node.key.equals(key)) {
+                        V old = node.val;
+                        node.val = value;
+                        return old;
+                    }
+                    while (node.next != null) {
+                        if ((node = node.next).key.equals(key)) {
+                            V old = node.val;
+                            node.val = value;
+                            return old;
+                        }
+                    }
+                    node.next = newNode;
+                }
+            }
+        } else {
+            Node<K, V> node;
+            synchronized (node = table[i]) {
+                if (node.key == null) {
+                    node.key = key;
+                    node.val = value;
+                    return null;
+                } else if (node.key.equals(key)) {
+                    V old = node.val;
+                    node.val = value;
+                    return old;
+                }
+                while (node.next != null) {
+                    if ((node = node.next).key.equals(key)) {
+                        V old = node.val;
+                        node.val = value;
+                        return old;
+                    }
+                }
+                node.next = new Node<>(h, key, value, null);
+                return null;
+            }
         }
         return null;
+    }
+
+    @Override
+    public V remove(Object key) {
+        int i;
+        if (table[(i = hash(key.hashCode()) & m)] != null) {
+            Node<K, V> node,preNode;
+            synchronized (node = table[i]) {
+                if (key.equals(node.key)) {
+                    V preV = node.val;
+                    if (node.next == null) {
+                        node.key = null;
+                        node.val = null;
+                    } else {
+                        table[i] = node.next;
+                    }
+                    return preV;
+                }
+                while (node.next != null) {
+                    preNode = node;
+                    if ((node = node.next).key.equals(key)) {
+                        preNode.next = node.next;
+                        return node.val;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public int size() {
+        int sum = 0;
+        Node node;
+        for (int i = 0; i < table.length; i++) {
+            if ((node = table[i]) != null) {
+                if (node.key != null) {
+                    sum++;
+                }
+                while ((node = node.next) != null) {
+                    sum++;
+                }
+            }
+        }
+        return sum;
     }
 
     @Override
@@ -165,11 +286,6 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
     @Override
     public V putIfAbsent(K key, V value) {
         return null;
-    }
-
-    @Override
-    public boolean remove(Object key, Object value) {
-        return false;
     }
 
     @Override
