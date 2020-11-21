@@ -31,7 +31,7 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
 /**
  * Description:线程安全的Map
  * 比 {@link java.util.concurrent.ConcurrentHashMap} 性能高
- *
+ * <p>
  * 主要区别:
  * 1、消除了树化以及树退化等操作:因为达到树化的概率很低，所以没必要为了这么低的概率去优化(增加红黑树结构，需要增加类型判断）。
  * 并且树化只是增加了查性能，写性能会降低
@@ -42,12 +42,13 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @author: Zeping Lu
  * @date: 2020/11/18 15:54
  */
-public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
+public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
     private Unsafe u;
     private final long BASE;
     private final long SCALE;
     private Node<K, V>[] table;
     private int m;
+
     static class Node<K, V> implements Map.Entry<K, V> {
         volatile K key;
         volatile V val;
@@ -80,7 +81,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
      *
      * @param capacity 数组容量
      */
-    public ConcurrentHashMap(int capacity) {
+    public NoResizeConHashMap(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException();
         }
@@ -176,7 +177,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements Serial
     public V remove(Object key) {
         int i;
         if (table[(i = hash(key.hashCode()) & m)] != null) {
-            Node<K, V> node,preNode;
+            Node<K, V> node, preNode;
             synchronized (node = table[i]) {
                 if (key.equals(node.key)) {
                     V preV = node.val;
