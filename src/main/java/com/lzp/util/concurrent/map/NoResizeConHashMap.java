@@ -47,17 +47,19 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
     private final long BASE;
     private final long SCALE;
     private Node<K, V>[] table;
-    private int m;
+    private final int M;
 
     static class Node<K, V> implements Map.Entry<K, V> {
         volatile K key;
         volatile V val;
+        volatile int h;
         volatile Node<K, V> next;
 
-        Node(K key, V val, Node<K, V> next) {
+        Node(K key, V val, Node<K, V> next,int h) {
             this.key = key;
             this.val = val;
             this.next = next;
+            this.h = h;
         }
 
         @Override
@@ -98,7 +100,7 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
                 MAXIMUM_CAPACITY :
                 tableSizeFor(capacity));
         table = new Node[cap];
-        m = cap - 1;
+        M = cap - 1;
     }
 
     /**
@@ -115,16 +117,15 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
         return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
     }
 
-    private int hash(Object key) {
-        int h;
-        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    private int hash(int h) {
+        return h ^ (h >>> 16);
     }
 
     @Override
     public V put(K key, V value) {
-        int i;
-        if (table[i = (hash(key.hashCode()) & m)] == null) {
-            Node<K, V> newNode = new Node(key, value, null);
+        int i, h;
+        if (table[i = ((h = (hash(key.hashCode()))) & M)] == null) {
+            Node newNode = new Node(key, value, null, h);
             if (!u.compareAndSwapObject(table, BASE + i * SCALE, null, newNode)) {
                 Node<K, V> node;
                 synchronized (node = table[i]) {
@@ -166,7 +167,7 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
                         return old;
                     }
                 }
-                node.next = new Node<>(key, value, null);
+                node.next = new Node<>(key, value, null, h);
                 return null;
             }
         }
@@ -174,9 +175,23 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
     }
 
     @Override
+    public V get(Object key) {
+        Node<K, V> node;
+        int h;
+        if ((node = table[(h = hash(key.hashCode())) & M]) != null) {
+            do {
+                if (node.h == h && (key.equals(node.key))) {
+                    return node.val;
+                }
+            } while ((node = node.next) != null);
+        }
+        return null;
+    }
+
+    @Override
     public V remove(Object key) {
-        int i;
-        if (table[(i = hash(key.hashCode()) & m)] != null) {
+        int i, h;
+        if (table[(i = (h = hash(key.hashCode())) & M)] != null) {
             Node<K, V> node, preNode;
             synchronized (node = table[i]) {
                 if (key.equals(node.key)) {
@@ -184,6 +199,7 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
                     if (node.next == null) {
                         node.key = null;
                         node.val = null;
+                        node.h = h;
                     } else {
                         table[i] = node.next;
                     }
@@ -191,7 +207,7 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
                 }
                 while (node.next != null) {
                     preNode = node;
-                    if ((node = node.next).key.equals(key)) {
+                    if ((node = node.next).h == h && node.key.equals(key)) {
                         preNode.next = node.next;
                         return node.val;
                     }
@@ -205,8 +221,8 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
     public int size() {
         int sum = 0;
         Node node;
-        for (int i = 0; i < table.length; i++) {
-            if ((node = table[i]) != null) {
+        for (Node<K, V> kvNode : table) {
+            if ((node = kvNode) != null) {
                 if (node.key != null) {
                     sum++;
                 }
