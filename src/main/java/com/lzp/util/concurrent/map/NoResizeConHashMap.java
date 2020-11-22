@@ -19,30 +19,26 @@ import sun.misc.Unsafe;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.AbstractMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.*;
+
 
 import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
 
 /**
  * Description:线程安全的Map
- * 比 {@link java.util.concurrent.ConcurrentHashMap} 性能高
+ * 比 {@link java.util.concurrent.ConcurrentHashMap} 性能高(写元素、读元素、删元素、遍历元素）
  * <p>
  * 主要区别:
  * 1、消除了树化以及树退化等操作:因为达到树化的概率很低，所以没必要为了这么低的概率去优化(增加红黑树结构，需要增加类型判断）。
  * 并且树化只是增加了查性能，写性能会降低
  * 2、没有扩容机制,所以要求使用者预估最大存储键值对数量(ConcurrentHashMap使用时也建议带参数初始化避免扩容,但是就算不去
- * 扩容，put过程避免不了检查是否在扩容的操作）
- * 4、优化了很多细节，减少不必要的操作
+ * 扩容，put和remove过程避免不了检查是否在扩容的操作）
+ * 3、优化了很多细节，减少不必要的操作
  *
  * @author: Zeping Lu
  * @date: 2020/11/18 15:54
  */
-public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
+public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
     private Unsafe u;
     private final long BASE;
     private final long SCALE;
@@ -75,6 +71,118 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
         @Override
         public V setValue(V value) {
             return null;
+        }
+
+        @Override
+        public final String toString(){ return key + "=" + val; }
+
+    }
+
+    private class EnteySet implements Set<Map.Entry<K, V>> {
+
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return false;
+        }
+
+        @Override
+        public Iterator<Entry<K, V>> iterator() {
+            return new EnteyIterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return new Object[0];
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return null;
+        }
+
+        @Override
+        public boolean add(Entry<K, V> kvEntry) {
+            return false;
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return false;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return false;
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends Entry<K, V>> c) {
+            return false;
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            return false;
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            return false;
+        }
+
+        @Override
+        public void clear() {
+
+        }
+    }
+
+    private class EnteyIterator implements Iterator<Entry<K, V>> {
+        private Node<K, V> thisNode = new Node<>(null, null, null, 0);
+        int index = 0;
+
+        @Override
+        public boolean hasNext() {
+            if (thisNode.next != null) {
+                return true;
+            } else {
+                Node<K, V> node;
+                int index = this.index;
+                while (index < table.length) {
+                    if ((node = table[index++]) != null) {
+                        if (node.key != null) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Entry<K, V> next() {
+            if (thisNode.next != null) {
+                return (thisNode = thisNode.next);
+            } else {
+                while (index < table.length) {
+                    if ((thisNode = table[index++]) != null) {
+                        if (thisNode.key != null) {
+                            return thisNode;
+                        }
+                    }
+                }
+            }
+            throw new NoSuchElementException();
         }
     }
 
@@ -154,6 +262,7 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
                 if (node.key == null) {
                     node.key = key;
                     node.val = value;
+                    node.h = h;
                     return null;
                 } else if (node.key.equals(key)) {
                     V old = node.val;
@@ -188,18 +297,18 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
         return null;
     }
 
+
     @Override
     public V remove(Object key) {
         int i, h;
         if (table[(i = (h = hash(key.hashCode())) & M)] != null) {
             Node<K, V> node, preNode;
             synchronized (node = table[i]) {
-                if (key.equals(node.key)) {
+                if (node.h == h && key.equals(node.key)) {
                     V preV = node.val;
                     if (node.next == null) {
                         node.key = null;
                         node.val = null;
-                        node.h = h;
                     } else {
                         table[i] = node.next;
                     }
@@ -218,6 +327,29 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
     }
 
     @Override
+    public void putAll(Map m) {
+
+    }
+
+    @Override
+    public void clear() {
+        Arrays.fill(table, null);
+    }
+
+    @Override
+    public Set keySet() {
+        return null;
+    }
+
+    @Override
+    public Collection values() {
+        return null;
+    }
+
+    /**
+     * 感觉这个方法实际场景中用得不多，所以就没有优化性能
+     */
+    @Override
     public int size() {
         int sum = 0;
         Node node;
@@ -235,58 +367,35 @@ public class NoResizeConHashMap<K, V> extends AbstractMap<K, V> implements Seria
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
-        return null;
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     @Override
-    public V getOrDefault(Object key, V defaultValue) {
-        return null;
+    public boolean containsKey(Object key) {
+        return get(key) != null;
     }
 
     @Override
-    public void forEach(BiConsumer<? super K, ? super V> action) {
-
-    }
-
-    @Override
-    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-
-    }
-
-    @Override
-    public V putIfAbsent(K key, V value) {
-        return null;
-    }
-
-    @Override
-    public boolean replace(K key, V oldValue, V newValue) {
+    public boolean containsValue(Object value) {
+        Node node;
+        for (Node<K, V> kvNode : table) {
+            if ((node = kvNode) != null) {
+                do {
+                    if (value.equals(node.val)) {
+                        return true;
+                    }
+                }
+                while ((node = node.next) != null);
+            }
+        }
         return false;
     }
 
     @Override
-    public V replace(K key, V value) {
-        return null;
+    public Set<Entry<K, V>> entrySet() {
+        return new EnteySet();
     }
 
-    @Override
-    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        return null;
-    }
-
-    @Override
-    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return null;
-    }
-
-    @Override
-    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return null;
-    }
-
-    @Override
-    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        return null;
-    }
 
 }
