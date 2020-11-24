@@ -1,5 +1,5 @@
 # CountDownLatch
-  线程安全的Map
+  线程安全的Map,
   带合理参数初始化,比 java.util.concurrent.ConcurrentHashMap 性能高(写元素、读元素、删元素、遍历元素)
  # 与java.util.concurrent.ConcurrentHashMap主要区别:
     1、消除了树化以及树退化等操作:因为达到树化的概率很低，所以没必要为了这么低的概率去优化(增加红黑树结构，需要增加类型判断）。
