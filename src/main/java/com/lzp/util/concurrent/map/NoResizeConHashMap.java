@@ -38,20 +38,20 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @author: Zeping Lu
  * @date: 2020/11/18 15:54
  */
-public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
+public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     private Unsafe u;
     private final long BASE;
     private final long SCALE;
     private Node<K, V>[] table;
     private final int M;
 
-    static class Node<K, V> implements Map.Entry<K, V> {
+    class Node<K, V> implements Map.Entry<K, V> {
         volatile K key;
         volatile V val;
         volatile int h;
         volatile Node<K, V> next;
 
-        Node(K key, V val, Node<K, V> next,int h) {
+        Node(K key, V val, Node<K, V> next, int h) {
             this.key = key;
             this.val = val;
             this.next = next;
@@ -60,21 +60,23 @@ public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
 
         @Override
         public K getKey() {
-            return null;
+            return this.key;
         }
 
         @Override
         public V getValue() {
-            return null;
+            return this.val;
         }
 
         @Override
         public V setValue(V value) {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public final String toString(){ return key + "=" + val; }
+        public final String toString() {
+            return key + "=" + val;
+        }
 
     }
 
@@ -233,7 +235,7 @@ public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
     public V put(K key, V value) {
         int i, h;
         if (table[i = ((h = (hash(key.hashCode()))) & M)] == null) {
-            Node newNode = new Node(key, value, null, h);
+            Node<K, V> newNode = new Node<>(key, value, null, h);
             if (!u.compareAndSwapObject(table, BASE + i * SCALE, null, newNode)) {
                 Node<K, V> node;
                 synchronized (node = table[i]) {
@@ -327,8 +329,10 @@ public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
     }
 
     @Override
-    public void putAll(Map m) {
-
+    public void putAll(Map<? extends K, ? extends V> m) {
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            this.put(entry.getKey(), entry.getValue());
+        }
     }
 
     @Override
@@ -352,7 +356,7 @@ public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
     @Override
     public int size() {
         int sum = 0;
-        Node node;
+        Node<K, V> node;
         for (Node<K, V> kvNode : table) {
             if ((node = kvNode) != null) {
                 if (node.key != null) {
@@ -378,7 +382,7 @@ public class NoResizeConHashMap<K, V>  implements Map<K,V>, Serializable {
 
     @Override
     public boolean containsValue(Object value) {
-        Node node;
+        Node<K, V> node;
         for (Node<K, V> kvNode : table) {
             if ((node = kvNode) != null) {
                 do {
