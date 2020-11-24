@@ -37,7 +37,9 @@
 [NoResizeConHashMap.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoResizeConHashMap.md)
 
 #  任何场景性能稳定比JUC好并且无任何负作用的类(推荐使用的)
-1、ThreadPoolExecutor.java(结合ListenableFuture.java使用):并行执行任务额外性能开销小，并且支持返回可添加回调的Future
-2、CountDownLatch.java：性能比juc包下的同名类高很多(不管是否开启JIT,实际开启JIT性能差距更大)
+1、ThreadPoolExecutor.java(结合ListenableFuture.java使用):
+并行执行任务额外性能开销小，并且支持返回可添加回调的Future
+2、CountDownLatch.java：
+性能比juc包下的同名类高很多(不管是否开启JIT,实际开启JIT性能差距更大)
 #  特定场景推荐使用类
 其他
