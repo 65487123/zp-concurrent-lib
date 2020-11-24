@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
  /**
-  * Description:和{@link java.util.concurrent.CountDownLatch} 用法一样，不过性能比他高
+  * Description:和{@link java.util.concurrent.CountDownLatch} 用法一样，
+  * 不过性能比他高很多
   *
   *
   * @author: Lu ZePing

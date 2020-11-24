@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Lu ZePing
  * @date: 2019/6/2 15:19
  */
-public class ThreadPoolExecutor extends ExecutorServiceAdapter {
+public class ThreadPoolExecutor implements ExecutorService {
 
     /**
      * 核心线程数量
@@ -506,6 +506,22 @@ public class ThreadPoolExecutor extends ExecutorServiceAdapter {
                 }
             }
         }
+    }
+
+    /**
+     * 用处不大，并且就算有这种需求，也可以自己根据业务需求去选择更好的实现
+     */
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * 用处不大，并且就算有这种需求，也可以自己根据业务需求去选择更好的实现
+     */
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        throw new UnsupportedOperationException();
     }
 
     /**
