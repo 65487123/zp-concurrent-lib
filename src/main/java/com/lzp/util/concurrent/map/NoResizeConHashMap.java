@@ -85,17 +85,17 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
 
         @Override
         public int size() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean isEmpty() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean contains(Object o) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -105,47 +105,118 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
 
         @Override
         public Object[] toArray() {
-            return new Object[0];
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public <T> T[] toArray(T[] a) {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean add(Entry<K, V> kvEntry) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean remove(Object o) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean containsAll(Collection<?> c) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean addAll(Collection<? extends Entry<K, V>> c) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean retainAll(Collection<?> c) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean removeAll(Collection<?> c) {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void clear() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
+    private class KeySet implements Set<K> {
+
+
+        @Override
+        public int size() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Iterator<K> iterator() {
+            return new KeyIterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean add(K k) {
+            throw new UnsupportedOperationException();
+        }
+
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends K> c) {
+            throw new UnsupportedOperationException();
+        }
+
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -180,6 +251,45 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                     if ((thisNode = table[index++]) != null) {
                         if (thisNode.key != null) {
                             return thisNode;
+                        }
+                    }
+                }
+            }
+            throw new NoSuchElementException();
+        }
+    }
+
+    private class KeyIterator implements Iterator<K> {
+        private Node<K, V> thisNode = new Node<>(null, null, null, 0);
+        int index = 0;
+
+        @Override
+        public boolean hasNext() {
+            if (thisNode.next != null) {
+                return true;
+            } else {
+                Node<K, V> node;
+                int index = this.index;
+                while (index < table.length) {
+                    if ((node = table[index++]) != null) {
+                        if (node.key != null) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public K next() {
+            if (thisNode.next != null) {
+                return (thisNode = thisNode.next).key;
+            } else {
+                while (index < table.length) {
+                    if ((thisNode = table[index++]) != null) {
+                        if (thisNode.key != null) {
+                            return thisNode.key;
                         }
                     }
                 }
@@ -341,13 +451,13 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     }
 
     @Override
-    public Set keySet() {
-        return null;
+    public Set<K> keySet() {
+        return new KeySet();
     }
 
     @Override
-    public Collection values() {
-        return null;
+    public Collection<V> values() {
+        throw new UnsupportedOperationException();
     }
 
     /**

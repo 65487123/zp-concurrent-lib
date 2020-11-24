@@ -2,7 +2,6 @@ import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
 import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
-import com.lzp.util.concurrent.latch.CountDownLatch;
 import com.lzp.util.concurrent.map.NoResizeConHashMap;
 import com.lzp.util.concurrent.threadpool.*;
 import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
@@ -29,58 +28,59 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        CountDownLatch countDownLatch = new CountDownLatch(12000);
-        //Map<String,String> map = new ConcurrentHashMap(15000000);
-        Map<String,String> map = new NoResizeConHashMap(15000);
+        CountDownLatch countDownLatch = new CountDownLatch(12000000);
+        //Map<String,String> map = new ConcurrentHashMap(1500000);
+        Map<String,String> map = new NoResizeConHashMap(1500000);
+        long now = System.currentTimeMillis();
 
         new Thread(() -> {
-            for (int i = 0; i < 2000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 0; i < 2000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 2000; i < 4000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 2000000; i < 4000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 4000; i < 6000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 4000000; i < 6000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 6000; i < 8000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 6000000; i < 8000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 8000; i < 10000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 8000000; i < 10000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 10000; i < 12000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
+            for (int i = 10000000; i < 12000000; i++) {
+                //map.put(String.valueOf(i),String.valueOf(i));
                 countDownLatch.countDown();
             }
         }).start();
         countDownLatch.await();
-        /*for (Map.Entry<String, String> entry : map.entrySet()) {
-            System.out.println(entry.getKey());
-        }*/
-        long now = System.currentTimeMillis();
-        for(Map.Entry<String,String> entry : map.entrySet()){
-            System.out.println(entry.getKey()+"="+entry.getValue());
+
+
+        /*for (String entry : map.keySet()) {
         }
+*/
         System.out.println(System.currentTimeMillis() - now);
         now = System.currentTimeMillis();
-        
-        System.out.println(map.size());
+        /*for (Map.Entry<String, String> entry : map.entrySet()) {
+        }
+        System.out.println(System.currentTimeMillis() - now);*/
+
     }
 
     static void put(BlockingQueue arrayBlockingQueue){
