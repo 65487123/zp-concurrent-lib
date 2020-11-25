@@ -39,10 +39,25 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @date: 2020/11/18 15:54
  */
 public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
+    /**
+     * Unsafe类，不解释
+     */
     private static Unsafe u;
+    /**
+     * 数组首个元素的地址(其实就是这个数组对象地址加上数组对象头的偏移量)
+     */
     private long base;
-    private long scale;
+    /**
+     * 每个元素偏移位数
+     */
+    private int aShift;
+    /**
+     * 存元素的容器
+     */
     private transient Node<K, V>[] table;
+    /**
+     * 用作与操作确定位置
+     */
     private int m;
 
     static class Node<K, V> implements Map.Entry<K, V> {
@@ -319,7 +334,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             throw new IllegalArgumentException();
         }
         base = u.arrayBaseOffset(Object[].class);
-        scale = u.arrayIndexScale(Object[].class);
+        /*通过首元素地址加上索引乘以scale(每个元素引用占位)可以得到元素位置，由于每个元素
+        引用大小肯定是2的次方(4或8)，所以乘操作可以用位移操作来代替，aShift就是要左移的位数*/
+        aShift = 31 - Integer.numberOfLeadingZeros(u.arrayIndexScale(Object[].class));
         table = new Node[m = (capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
                 MAXIMUM_CAPACITY :
                 tableSizeFor(capacity)];
@@ -349,7 +366,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         int i, h;
         if (table[i = ((h = (hash(key.hashCode()))) & m)] == null) {
             Node<K, V> newNode = new Node<>(key, value, null, h);
-            if (!u.compareAndSwapObject(table, base + i * scale, null, newNode)) {
+            if (!u.compareAndSwapObject(table, base + ((long) i << aShift), null, newNode)) {
                 Node<K, V> node;
                 synchronized (node = table[i]) {
                     if (node.key == null) {
@@ -402,7 +419,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public V get(Object key) {
         Node<K, V> node;
         int h;
-        if ((node = table[(h = hash(key.hashCode())) & m]) != null) {
+        if ((node = tabAt((h = hash(key.hashCode())) & m)) != null) {
             do {
                 if (node.h == h && (key.equals(node.key))) {
                     return node.val;
@@ -416,24 +433,30 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     @Override
     public V remove(Object key) {
         int i, h;
-        if (table[(i = (h = hash(key.hashCode())) & m)] != null) {
-            Node<K, V> node, preNode;
-            synchronized (node = table[i]) {
-                if (node.h == h && key.equals(node.key)) {
-                    V preV = node.val;
-                    if (node.next == null) {
-                        node.key = null;
-                        node.val = null;
-                    } else {
-                        table[i] = node.next;
-                    }
-                    return preV;
-                }
-                while (node.next != null) {
-                    preNode = node;
-                    if ((node = node.next).h == h && node.key.equals(key)) {
-                        preNode.next = node.next;
-                        return node.val;
+        Node<K, V> node;
+        if ((node = tabAt((i = (h = hash(key.hashCode())) & m))) != null) {
+            Node<K, V> preNode;
+            while (true) {
+                synchronized (node) {
+                    if (node == (node = tabAt(i))) {
+                        if (node.h == h && key.equals(node.key)) {
+                            V preV = node.val;
+                            if (node.next == null) {
+                                node.key = null;
+                                node.val = null;
+                            } else {
+                                table[i] = node.next;
+                            }
+                            return preV;
+                        }
+                        while (node.next != null) {
+                            preNode = node;
+                            if ((node = node.next).h == h && node.key.equals(key)) {
+                                preNode.next = node.next;
+                                return node.val;
+                            }
+                        }
+                        return null;
                     }
                 }
             }
@@ -470,8 +493,8 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public int size() {
         int sum = 0;
         Node<K, V> node;
-        for (Node<K, V> kvNode : table) {
-            if ((node = kvNode) != null) {
+        for (int i = 0; i < table.length; i++) {
+            if ((node = tabAt(i)) != null) {
                 if (node.key != null) {
                     sum++;
                 }
@@ -514,6 +537,10 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         return new EnteySet();
     }
 
+    private Node<K, V> tabAt(int i) {
+        return (Node<K, V>) u.getObjectVolatile(table, ((long) i << aShift) + base);
+    }
+
     /**
      * 不建议使用java原生序列化，性能不行
      */
@@ -542,7 +569,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         }
         if (map.size() != 0) {
             base = u.arrayBaseOffset(Object[].class);
-            scale = u.arrayIndexScale(Object[].class);
+            aShift = 31 - Integer.numberOfLeadingZeros(u.arrayIndexScale(Object[].class));
             table = new Node[m = tableSizeFor(map.size())];
             m--;
             for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -550,4 +577,5 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             }
         }
     }
+
 }

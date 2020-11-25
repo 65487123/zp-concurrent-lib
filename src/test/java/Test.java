@@ -29,61 +29,94 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        CountDownLatch countDownLatch = new CountDownLatch(120000);
-        //Map<String,String> map = new ConcurrentHashMap(150000);
-        Map<String,String> map = new NoResizeConHashMap(150000);
+        CountDownLatch countDownLatch = new CountDownLatch(12000000);
+        //Map<String,String> map = new ConcurrentHashMap(15000000);
+        Map<String,String> map = new NoResizeConHashMap(15000000);
+        long now = System.currentTimeMillis();
 
+        CountDownLatch finalCountDownLatch6 = countDownLatch;
         new Thread(() -> {
-            for (int i = 0; i < 20000; i++) {
+            for (int i = 0; i < 2000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 20000; i < 40000; i++) {
+            for (int i = 2000000; i < 4000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 40000; i < 60000; i++) {
+            for (int i = 4000000; i < 6000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 60000; i < 80000; i++) {
+            for (int i = 6000000; i < 8000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 80000; i < 100000; i++) {
+            for (int i = 8000000; i < 10000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         new Thread(() -> {
-            for (int i = 100000; i < 120000; i++) {
+            for (int i = 10000000; i < 12000000; i++) {
                 map.put(String.valueOf(i),String.valueOf(i));
-                countDownLatch.countDown();
+                finalCountDownLatch6.countDown();
             }
         }).start();
         countDownLatch.await();
-        long now = System.currentTimeMillis();
+        System.out.println(System.currentTimeMillis() - now);
+        now = System.currentTimeMillis();
+        for (Map.Entry entry : map.entrySet()) {
+        }
 
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("a.txt"));
-        objectOutputStream.writeObject(map);
-        objectOutputStream.flush();
-        ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("a.txt"));
-        //ConcurrentHashMap map1 = (ConcurrentHashMap) objectInputStream.readObject();
-        NoResizeConHashMap map1 = (NoResizeConHashMap) objectInputStream.readObject();
+        System.out.println(System.currentTimeMillis() - now);
+
+        countDownLatch = new CountDownLatch(12000000);
+        now = System.currentTimeMillis();
+
+        CountDownLatch finalCountDownLatch = countDownLatch;
+        new Thread(() -> {
+            for (int i = 0; i < 3000000; i++) {
+                map.remove(String.valueOf(i));
+                finalCountDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 3000000; i < 6000000; i++) {
+                map.remove(String.valueOf(i));
+                finalCountDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 6000000; i < 9000000; i++) {
+                map.remove(String.valueOf(i));
+                finalCountDownLatch.countDown();
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 9000000; i < 12000000; i++) {
+                map.remove(String.valueOf(i));
+                finalCountDownLatch.countDown();
+            }
+        }).start();
+        countDownLatch.await();
+
+
 
         /*for (String entry : map.keySet()) {
         }
 */
         System.out.println(System.currentTimeMillis() - now);
-        System.out.println(map1.size());
+        System.out.println(map.size());
+
         now = System.currentTimeMillis();
         /*for (Map.Entry<String, String> entry : map.entrySet()) {
         }
