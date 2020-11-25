@@ -28,7 +28,7 @@
 [CountDownLatch.java](https://github.com/65487123/zp-concurrent-lib/blob/master/CountDownLatch.md)
 ## com.lzp.util.concurrent.map
 [NoResizeConHashMap.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoResizeConHashMap.md)
-#  任何场景性能稳定比JUC好并且无任何负作用的类(推荐使用的)
+#  任何场景性能稳定比JUC好并且无任何负作用的类(推荐使用)
     1、ThreadPoolExecutor.java(结合ListenableFuture.java使用):
     并行执行任务额外性能开销小，并且支持返回可添加回调的Future
     2、CountDownLatch.java：
