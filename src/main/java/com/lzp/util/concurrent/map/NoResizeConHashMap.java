@@ -39,13 +39,13 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @date: 2020/11/18 15:54
  */
 public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
-    private Unsafe u;
-    private final long BASE;
-    private final long SCALE;
-    private Node<K, V>[] table;
-    private final int M;
+    private static Unsafe u;
+    private long base;
+    private long scale;
+    private transient Node<K, V>[] table;
+    private int m;
 
-    class Node<K, V> implements Map.Entry<K, V> {
+    static class Node<K, V> implements Map.Entry<K, V> {
         volatile K key;
         volatile V val;
         volatile int h;
@@ -298,6 +298,17 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         }
     }
 
+    static {
+        try {
+            Constructor<Unsafe> constructor = Unsafe.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            u = constructor.newInstance();
+        } catch (Exception ignored) {
+            assert u != null;
+        }
+    }
+
+
     /**
      * 构造方法，必须指定容量。需要使用者根据业务场景预估最大键值对数量,设置合理参数以达到最好性能
      *
@@ -307,20 +318,12 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         if (capacity < 0) {
             throw new IllegalArgumentException();
         }
-        try {
-            Constructor<Unsafe> constructor = Unsafe.class.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            u = constructor.newInstance();
-        } catch (Exception ignored) {
-        }
-        assert u != null;
-        BASE = u.arrayBaseOffset(Object[].class);
-        SCALE = u.arrayIndexScale(Object[].class);
-        int cap = ((capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
+        base = u.arrayBaseOffset(Object[].class);
+        scale = u.arrayIndexScale(Object[].class);
+        table = new Node[m = (capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
                 MAXIMUM_CAPACITY :
-                tableSizeFor(capacity));
-        table = new Node[cap];
-        M = cap - 1;
+                tableSizeFor(capacity)];
+        m--;
     }
 
     /**
@@ -344,9 +347,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     @Override
     public V put(K key, V value) {
         int i, h;
-        if (table[i = ((h = (hash(key.hashCode()))) & M)] == null) {
+        if (table[i = ((h = (hash(key.hashCode()))) & m)] == null) {
             Node<K, V> newNode = new Node<>(key, value, null, h);
-            if (!u.compareAndSwapObject(table, BASE + i * SCALE, null, newNode)) {
+            if (!u.compareAndSwapObject(table, base + i * scale, null, newNode)) {
                 Node<K, V> node;
                 synchronized (node = table[i]) {
                     if (node.key == null) {
@@ -399,7 +402,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public V get(Object key) {
         Node<K, V> node;
         int h;
-        if ((node = table[(h = hash(key.hashCode())) & M]) != null) {
+        if ((node = table[(h = hash(key.hashCode())) & m]) != null) {
             do {
                 if (node.h == h && (key.equals(node.key))) {
                     return node.val;
@@ -413,7 +416,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     @Override
     public V remove(Object key) {
         int i, h;
-        if (table[(i = (h = hash(key.hashCode())) & M)] != null) {
+        if (table[(i = (h = hash(key.hashCode())) & m)] != null) {
             Node<K, V> node, preNode;
             synchronized (node = table[i]) {
                 if (node.h == h && key.equals(node.key)) {
@@ -511,5 +514,40 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         return new EnteySet();
     }
 
+    /**
+     * 不建议使用java原生序列化，性能不行
+     */
+    private void writeObject(java.io.ObjectOutputStream s)
+            throws java.io.IOException {
+        for (Entry<K, V> node : this.entrySet()) {
+            s.writeObject(node.getKey());
+            s.writeObject(node.getValue());
+        }
+    }
 
+    /**
+     * 不建议使用java原生序列化，性能不行
+     */
+    private void readObject(java.io.ObjectInputStream s)
+            throws java.io.IOException, ClassNotFoundException {
+        Map<K, V> map = new HashMap<>();
+        for (; ; ) {
+            try {
+                K k = (K) s.readObject();
+                V v = (V) s.readObject();
+                map.put(k, v);
+            } catch (Exception e) {
+                break;
+            }
+        }
+        if (map.size() != 0) {
+            base = u.arrayBaseOffset(Object[].class);
+            scale = u.arrayIndexScale(Object[].class);
+            table = new Node[m = tableSizeFor(map.size())];
+            m--;
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                this.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
 }
