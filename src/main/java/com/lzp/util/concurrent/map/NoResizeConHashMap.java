@@ -464,7 +464,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     }
 
     /**
-     * 感觉这个方法实际场景中用得不多，所以就没有优化性能
+     * 感觉这个方法实际场景中用得不多，所以为了不影响读写元素性能，牺牲了这个方法的性能
      */
     @Override
     public int size() {
