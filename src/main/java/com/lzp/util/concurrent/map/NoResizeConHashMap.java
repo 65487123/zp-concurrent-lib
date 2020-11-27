@@ -19,10 +19,11 @@ import sun.misc.Unsafe;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.rmi.RemoteException;
 import java.util.*;
 
 
-import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
 
 /**
  * Description:线程安全的Map
@@ -39,26 +40,17 @@ import static com.sun.xml.internal.fastinfoset.util.ValueArray.MAXIMUM_CAPACITY;
  * @date: 2020/11/18 15:54
  */
 public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
-    /**
-     * Unsafe类，不解释
-     */
-    private static Unsafe u;
-    /**
-     * 数组首个元素的地址(其实就是这个数组对象地址加上数组对象头的偏移量)
-     */
-    private long base;
-    /**
-     * 每个元素偏移位数
-     */
-    private int aShift;
-    /**
-     * 存元素的容器
-     */
-    private transient Node<K, V>[] table;
-    /**
-     * 用作与操作确定位置
-     */
-    private int m;
+    public static final int MAXIMUM_CAPACITY = 2147483647;
+
+    private static final Unsafe U;
+
+    private final long BASE;
+
+    private final int ASHIFT;
+
+    private final transient Node<K, V>[] TABLE;
+
+    private final int M;
 
     static class Node<K, V> implements Map.Entry<K, V> {
         volatile K key;
@@ -237,7 +229,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
 
     private class EnteyIterator implements Iterator<Entry<K, V>> {
         private Node<K, V> thisNode = new Node<>(null, null, null, 0);
-        int index = 0;
+        private int index = 0;
 
         @Override
         public boolean hasNext() {
@@ -245,9 +237,10 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                 return true;
             } else {
                 Node<K, V> node;
+                Node[] tab = TABLE;
                 int index = this.index;
-                while (index < table.length) {
-                    if ((node = table[index++]) != null) {
+                while (index < tab.length) {
+                    if ((node = tabAt(tab, index++)) != null) {
                         if (node.key != null) {
                             return true;
                         }
@@ -262,8 +255,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             if (thisNode.next != null) {
                 return (thisNode = thisNode.next);
             } else {
-                while (index < table.length) {
-                    if ((thisNode = table[index++]) != null) {
+                Node[] tab = TABLE;
+                while (index < tab.length) {
+                    if ((thisNode = tabAt(tab,index++)) != null) {
                         if (thisNode.key != null) {
                             return thisNode;
                         }
@@ -276,7 +270,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
 
     private class KeyIterator implements Iterator<K> {
         private Node<K, V> thisNode = new Node<>(null, null, null, 0);
-        int index = 0;
+        private int index = 0;
 
         @Override
         public boolean hasNext() {
@@ -284,9 +278,10 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                 return true;
             } else {
                 Node<K, V> node;
+                Node[] tab = TABLE;
                 int index = this.index;
-                while (index < table.length) {
-                    if ((node = table[index++]) != null) {
+                while (index < tab.length) {
+                    if ((node = tabAt(tab,index++)) != null) {
                         if (node.key != null) {
                             return true;
                         }
@@ -301,8 +296,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             if (thisNode.next != null) {
                 return (thisNode = thisNode.next).key;
             } else {
-                while (index < table.length) {
-                    if ((thisNode = table[index++]) != null) {
+                Node[] tab = TABLE;
+                while (index < tab.length) {
+                    if ((thisNode = tabAt(tab,index++)) != null) {
                         if (thisNode.key != null) {
                             return thisNode.key;
                         }
@@ -317,9 +313,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         try {
             Constructor<Unsafe> constructor = Unsafe.class.getDeclaredConstructor();
             constructor.setAccessible(true);
-            u = constructor.newInstance();
+            U = constructor.newInstance();
         } catch (Exception ignored) {
-            assert u != null;
+            throw new RuntimeException("Class initialization failed: Unsafe initialization failed");
         }
     }
 
@@ -333,14 +329,13 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         if (capacity < 0) {
             throw new IllegalArgumentException();
         }
-        base = u.arrayBaseOffset(Object[].class);
+        BASE = U.arrayBaseOffset(Object[].class);
         /*通过首元素地址加上索引乘以scale(每个元素引用占位)可以得到元素位置，由于每个元素
         引用大小肯定是2的次方(4或8)，所以乘操作可以用位移操作来代替，aShift就是要左移的位数*/
-        aShift = 31 - Integer.numberOfLeadingZeros(u.arrayIndexScale(Object[].class));
-        table = new Node[m = (capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
+        ASHIFT = 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class));
+        TABLE = new Node[(M = (capacity >= (MAXIMUM_CAPACITY >>> 1)) ?
                 MAXIMUM_CAPACITY :
-                tableSizeFor(capacity)];
-        m--;
+                tableSizeFor(capacity) - 1) + 1];
     }
 
     /**
@@ -364,52 +359,61 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     @Override
     public V put(K key, V value) {
         int i, h;
-        if (table[i = ((h = (hash(key.hashCode()))) & m)] == null) {
+        Node[] tab = this.TABLE;
+        if (tabAt(tab, i = (h = (hash(key.hashCode()))) & M) == null) {
             Node<K, V> newNode = new Node<>(key, value, null, h);
-            if (!u.compareAndSwapObject(table, base + ((long) i << aShift), null, newNode)) {
+            if (!U.compareAndSwapObject(TABLE, BASE + ((long) i << ASHIFT), null, newNode)) {
                 Node<K, V> node;
-                synchronized (node = table[i]) {
-                    if (node.key == null) {
-                        node.key = key;
-                        node.val = value;
-                        return null;
-                    } else if (node.key.equals(key)) {
-                        V old = node.val;
-                        node.val = value;
-                        return old;
-                    }
-                    while (node.next != null) {
-                        if ((node = node.next).key.equals(key)) {
-                            V old = node.val;
-                            node.val = value;
-                            return old;
+                while (true) {
+                    synchronized (node = tabAt(tab, i)) {
+                        if (node == (node = tabAt(tab, i))) {
+                            if (node.key == null) {
+                                node.key = key;
+                                node.val = value;
+                                return null;
+                            } else if (node.key.equals(key)) {
+                                V old = node.val;
+                                node.val = value;
+                                return old;
+                            }
+                            while (node.next != null) {
+                                if ((node = node.next).key.equals(key)) {
+                                    V old = node.val;
+                                    node.val = value;
+                                    return old;
+                                }
+                            }
+                            node.next = newNode;
                         }
                     }
-                    node.next = newNode;
                 }
             }
         } else {
             Node<K, V> node;
-            synchronized (node = table[i]) {
-                if (node.key == null) {
-                    node.key = key;
-                    node.val = value;
-                    node.h = h;
-                    return null;
-                } else if (node.key.equals(key)) {
-                    V old = node.val;
-                    node.val = value;
-                    return old;
-                }
-                while (node.next != null) {
-                    if ((node = node.next).key.equals(key)) {
-                        V old = node.val;
-                        node.val = value;
-                        return old;
+            while (true) {
+                synchronized (node = tabAt(tab, i)) {
+                    if (node == (node = tabAt(tab, i))) {
+                        if (node.key == null) {
+                            node.key = key;
+                            node.val = value;
+                            node.h = h;
+                            return null;
+                        } else if (node.key.equals(key)) {
+                            V old = node.val;
+                            node.val = value;
+                            return old;
+                        }
+                        while (node.next != null) {
+                            if ((node = node.next).key.equals(key)) {
+                                V old = node.val;
+                                node.val = value;
+                                return old;
+                            }
+                        }
+                        node.next = new Node<>(key, value, null, h);
+                        return null;
                     }
                 }
-                node.next = new Node<>(key, value, null, h);
-                return null;
             }
         }
         return null;
@@ -419,7 +423,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public V get(Object key) {
         Node<K, V> node;
         int h;
-        if ((node = tabAt((h = hash(key.hashCode())) & m)) != null) {
+        if ((node = tabAt(TABLE,(h = hash(key.hashCode())) & M)) != null) {
             do {
                 if (node.h == h && (key.equals(node.key))) {
                     return node.val;
@@ -434,18 +438,19 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public V remove(Object key) {
         int i, h;
         Node<K, V> node;
-        if ((node = tabAt((i = (h = hash(key.hashCode())) & m))) != null) {
+        Node[] tab = TABLE;
+        if ((node = tabAt(tab,(i = (h = hash(key.hashCode())) & M))) != null) {
             Node<K, V> preNode;
             while (true) {
                 synchronized (node) {
-                    if (node == (node = tabAt(i))) {
+                    if (node == (node = tabAt(tab,i))) {
                         if (node.h == h && key.equals(node.key)) {
                             V preV = node.val;
                             if (node.next == null) {
                                 node.key = null;
                                 node.val = null;
                             } else {
-                                table[i] = node.next;
+                                TABLE[i] = node.next;
                             }
                             return preV;
                         }
@@ -460,8 +465,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                     }
                 }
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -473,7 +479,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
 
     @Override
     public void clear() {
-        Arrays.fill(table, null);
+        Arrays.fill(TABLE, null);
     }
 
     @Override
@@ -493,8 +499,9 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public int size() {
         int sum = 0;
         Node<K, V> node;
-        for (int i = 0; i < table.length; i++) {
-            if ((node = tabAt(i)) != null) {
+        Node[] tab = TABLE;
+        for (int i = 0; i < TABLE.length; i++) {
+            if ((node = tabAt(tab,i)) != null) {
                 if (node.key != null) {
                     sum++;
                 }
@@ -519,7 +526,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     @Override
     public boolean containsValue(Object value) {
         Node<K, V> node;
-        for (Node<K, V> kvNode : table) {
+        for (Node<K, V> kvNode : TABLE) {
             if ((node = kvNode) != null) {
                 do {
                     if (value.equals(node.val)) {
@@ -537,8 +544,8 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         return new EnteySet();
     }
 
-    private Node<K, V> tabAt(int i) {
-        return (Node<K, V>) u.getObjectVolatile(table, ((long) i << aShift) + base);
+    private Node<K, V> tabAt(Node[] tab,int i) {
+        return (Node<K, V>) U.getObjectVolatile(tab, ((long) i << ASHIFT) + BASE);
     }
 
     /**
@@ -568,14 +575,92 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             }
         }
         if (map.size() != 0) {
-            base = u.arrayBaseOffset(Object[].class);
-            aShift = 31 - Integer.numberOfLeadingZeros(u.arrayIndexScale(Object[].class));
-            table = new Node[m = tableSizeFor(map.size())];
-            m--;
+            Class cls = this.getClass();
+            try {
+                Field base = cls.getDeclaredField("BASE");
+                base.setAccessible(true);
+                base.set(this, U.arrayBaseOffset(Object[].class));
+                Field aSft= cls.getDeclaredField("ASHIFT");
+                aSft.setAccessible(true);
+                aSft.set(this, 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class)));
+                Field m = cls.getDeclaredField("M");
+                m.setAccessible(true);
+                m.set(this, tableSizeFor(map.size()) - 1);
+                Field table = cls.getDeclaredField("TABLE");
+                table.setAccessible(true);
+                table.set(this, new Node[this.M + 1]);
+            } catch (Exception e) {
+                throw new RemoteException("Deserialization failed");
+            }
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 this.put(entry.getKey(), entry.getValue());
             }
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder(TABLE.length << 2).append("{");
+        Node<K, V> node;
+        Node[] tab = this.TABLE;
+        for (int i = 0; i < tab.length; i++) {
+            if ((node = tabAt(tab, i)) != null) {
+                /*if (node.key != null) {
+                    do {
+                        stringBuilder.append(node.key + "=" + node.val + ",");
+                    } while ((node = node.next) != null);
+                }*/
+                if (node.key !=null){
+                    stringBuilder.append(node.key + "=" + node.val + ",");
+                }else {
+                    continue;
+                }
+                while (node.next!=null){
+                    node = node.next;
+                    stringBuilder.append(node.key + "=" + node.val + ",");
+                }
+            }
+        }
+        stringBuilder.setCharAt(stringBuilder.length() - 1, '}');
+        return stringBuilder.toString();
+    }
+
+    /**
+     * 返回最大链表长度，用来判断hash碰撞程度
+     */
+    public int maxLenth() {
+        int maxLength = 1;
+        Node node;
+        Node[] table = TABLE;
+        for (int i = 0; i < TABLE.length; i++) {
+            node = tabAt(table, i);
+            if (node == null) {
+                continue;
+            }
+            int length = 1;
+            while ((node = node.next) != null) {
+                length++;
+            }
+            if (length > maxLength) {
+                maxLength = length;
+            }
+        }
+        return maxLength;
+    }
+
+    /**
+     * 返回空桶个数，用来判断hash碰撞程度
+     */
+    public int emptyBucketSum() {
+        int emptyBucketSum = 0;
+        Node node;
+        Node[] table = TABLE;
+        for (int i = 0; i < TABLE.length; i++) {
+            node = tabAt(table, i);
+            if (node == null) {
+                emptyBucketSum++;
+            }
+        }
+        return emptyBucketSum;
+    }
 }

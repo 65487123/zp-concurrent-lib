@@ -1,16 +1,10 @@
-import com.lzp.util.concurrent.blockingQueue.nolock.DependenOneTOneBlocQue;
-import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
-import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.map.NoResizeConHashMap;
-import com.lzp.util.concurrent.threadpool.*;
-import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -110,17 +104,27 @@ public class Test {
         countDownLatch.await();
 
 
+/*
 
-        /*for (String entry : map.keySet()) {
+        for (String entry : map.keySet()) {
         }
 */
+
         System.out.println(System.currentTimeMillis() - now);
         System.out.println(map.size());
 
-        now = System.currentTimeMillis();
-        /*for (Map.Entry<String, String> entry : map.entrySet()) {
+        /*now = System.currentTimeMillis();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
         }
         System.out.println(System.currentTimeMillis() - now);*/
+
+        /*for (int i = 0; i <100000 ; i++) {
+            map.put(String.valueOf(i), String.valueOf(i));
+        }
+
+        long now = System.currentTimeMillis();
+        map.toString();
+        System.out.println(System.currentTimeMillis()-now);*/
 
     }
 
