@@ -104,12 +104,6 @@ public class Test {
         countDownLatch.await();
 
 
-/*
-
-        for (String entry : map.keySet()) {
-        }
-*/
-
         System.out.println(System.currentTimeMillis() - now);
         System.out.println(map.size());
 

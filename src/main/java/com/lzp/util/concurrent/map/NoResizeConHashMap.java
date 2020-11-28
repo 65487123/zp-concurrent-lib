@@ -371,13 +371,13 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                                 node.key = key;
                                 node.val = value;
                                 return null;
-                            } else if (node.key.equals(key)) {
+                            } else if (node.h == h && node.key.equals(key)) {
                                 V old = node.val;
                                 node.val = value;
                                 return old;
                             }
                             while (node.next != null) {
-                                if ((node = node.next).key.equals(key)) {
+                                if ((node = node.next).h == h && node.key.equals(key)) {
                                     V old = node.val;
                                     node.val = value;
                                     return old;
@@ -398,13 +398,13 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                             node.val = value;
                             node.h = h;
                             return null;
-                        } else if (node.key.equals(key)) {
+                        } else if (node.h == h && node.key.equals(key)) {
                             V old = node.val;
                             node.val = value;
                             return old;
                         }
                         while (node.next != null) {
-                            if ((node = node.next).key.equals(key)) {
+                            if ((node = node.next).h == h && node.key.equals(key)) {
                                 V old = node.val;
                                 node.val = value;
                                 return old;
@@ -428,6 +428,13 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                 if (node.h == h && (key.equals(node.key))) {
                     return node.val;
                 }
+                /*每次判断都赋值一次是考虑过的，因为next属性是volatile修饰，每次都会去高速缓存中读(如果
+                高速缓存中没有就会去内存中读然后放到高速缓存行中)，然后取到寄存器中。高速缓存还受缓存一致性协议约束，
+                实际比直接从寄存器中读慢很多。所以这里每次这样操作，每次从高速缓存或者内存中读出来，赋值一份到局部变量
+                表中，并且判断。如果为null，只是浪费一次给局部变量赋值的操作。实际数组有元素的桶的个数就是浪费的赋值
+                次数。而任意一个链表长度大于一，比一大一，就少读一次高速缓存或内存。 经过实际测试，随机放元素，是会出现
+                很多空桶，和很多长度不为1的链表的。
+                * */
             } while ((node = node.next) != null);
         }
         return null;
