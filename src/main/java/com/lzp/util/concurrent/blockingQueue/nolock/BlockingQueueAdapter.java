@@ -40,127 +40,127 @@ public abstract class BlockingQueueAdapter<E> implements BlockingQueue<E> {
 
     @Override
     public void put(E e) throws InterruptedException {
-
+        throw new UnsupportedOperationException();
     }
 
     public void put(E e, int threadId) throws InterruptedException{
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean add(E e) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean offer(E e) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public E remove() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public E poll() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public E element() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public E peek() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
 
     @Override
     public int remainingCapacity() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean remove(Object o) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void clear() {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int size() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean contains(Object o) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<E> iterator() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public <T> T[] toArray(T[] a) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int drainTo(Collection<? super E> c) {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int drainTo(Collection<? super E> c, int maxElements) {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 }
