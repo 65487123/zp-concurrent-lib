@@ -1,8 +1,11 @@
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
+import com.lzp.util.concurrent.list.ConcurrentArrayList;
 import com.lzp.util.concurrent.map.NoResizeConHashMap;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -23,89 +26,16 @@ public class Test {
     static int r = d.length;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        CountDownLatch countDownLatch = new CountDownLatch(12000000);
         //Map<String,String> map = new ConcurrentHashMap(15000000);
-        Map<String,String> map = new NoResizeConHashMap(15000000);
-        long now = System.currentTimeMillis();
+        List list = new ArrayList();
 
-        CountDownLatch finalCountDownLatch6 = countDownLatch;
-        new Thread(() -> {
-            for (int i = 0; i < 2000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 2000000; i < 4000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 4000000; i < 6000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 6000000; i < 8000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 8000000; i < 10000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 10000000; i < 12000000; i++) {
-                map.put(String.valueOf(i),String.valueOf(i));
-                finalCountDownLatch6.countDown();
-            }
-        }).start();
-        countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);
-        now = System.currentTimeMillis();
-        for (Map.Entry entry : map.entrySet()) {
+        long now  = System.currentTimeMillis();
+
+        for (int i = 0; i < 1000000; i++) {
+            list.add(String.valueOf(i));
         }
 
         System.out.println(System.currentTimeMillis() - now);
-
-        countDownLatch = new CountDownLatch(12000000);
-        now = System.currentTimeMillis();
-
-        CountDownLatch finalCountDownLatch = countDownLatch;
-        new Thread(() -> {
-            for (int i = 0; i < 3000000; i++) {
-                map.remove(String.valueOf(i));
-                finalCountDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 3000000; i < 6000000; i++) {
-                map.remove(String.valueOf(i));
-                finalCountDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 6000000; i < 9000000; i++) {
-                map.remove(String.valueOf(i));
-                finalCountDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 9000000; i < 12000000; i++) {
-                map.remove(String.valueOf(i));
-                finalCountDownLatch.countDown();
-            }
-        }).start();
-        countDownLatch.await();
-
-
-        System.out.println(System.currentTimeMillis() - now);
-        System.out.println(map.size());
 
         /*now = System.currentTimeMillis();
         for (Map.Entry<String, String> entry : map.entrySet()) {

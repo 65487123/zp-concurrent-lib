@@ -14,51 +14,84 @@
  *  limitations under the License.
  */
 
-/*
+
 package com.lzp.util.concurrent.list;
 
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-*/
 /**
- * Description:高性能线程安全的ArrayList
- * jdk提供的线程安全List缺点：
- * 1、{@link java.util.Vector}:所有操作全加锁，性能太差
- * 2、{@link java.util.concurrent.CopyOnWriteArrayList}：
+ * Description:线程安全的ArrayList
+ * jdk提供的线程安全List：
+ * 1、{@link java.util.Vector}:所有操作全加锁，读和写不能同时进行
+ * 2、Collections.synchronizedList 和Vector一样，所有操作加锁，大量线程时性能很低
+ * 3、{@link java.util.concurrent.CopyOnWriteArrayList}：
  * 写时复制，大量写操作时，频繁new数组并复制，严重影响性能，数组元素多时很容易造成OOM
- * 3、Collections.synchronizedList 和Vector一样，所有操作加锁，性能很低
+ * 适合读多写少
+ *
+ * 这个list的特点：
+ * 写时加锁，读时无锁(通过Unsafe直接读内存值),适合写多读少或者读写频率差不多
  *
  * @author: Zeping Lu
  * @date: 2020/11/25 14:45
- *//*
+ */
 
 public class ConcurrentArrayList<E> implements List<E> {
+    private final long BASE;
+
+    private final int ASHIFT;
+
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    private static final Unsafe U;
 
     private Object[] elementData;
+
     private int size;
+
+    static {
+        try {
+            Constructor<Unsafe> constructor = Unsafe.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            U = constructor.newInstance();
+        } catch (Exception ignored) {
+            throw new RuntimeException("Class initialization failed: Unsafe initialization failed");
+        }
+    }
     public ConcurrentArrayList(int initialCapacity) {
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Illegal Capacity: " +
                     initialCapacity);
         }
+        BASE = U.arrayBaseOffset(Object[].class);
+        /*通过首元素地址加上索引乘以scale(每个元素引用占位)可以得到元素位置，由于每个元素
+        引用大小肯定是2的次方(4或8)，所以乘操作可以用位移操作来代替，aShift就是要左移的位数*/
+        ASHIFT = 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class));
         this.elementData = new Object[initialCapacity];
     }
 
     public ConcurrentArrayList() {
+        BASE = U.arrayBaseOffset(Object[].class);
+        /*通过首元素地址加上索引乘以scale(每个元素引用占位)可以得到元素位置，由于每个元素
+        引用大小肯定是2的次方(4或8)，所以乘操作可以用位移操作来代替，aShift就是要左移的位数*/
+        ASHIFT = 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class));
         this.elementData = new Object[10];
     }
 
     @Override
     public int size() {
-        return 0;
+        return this.size;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     @Override
@@ -77,14 +110,68 @@ public class ConcurrentArrayList<E> implements List<E> {
     }
 
     @Override
-    public boolean add(Object o) {
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
+    public <T> T[] toArray(T[] ts) {
+        return null;
+    }
+
+    @Override
+    public synchronized boolean add(E e) {
+        ensureCapacityInternal(size + 1);
         elementData[size++] = e;
         return true;
     }
 
+    private void ensureCapacityInternal(int minCapacity) {
+        ensureExplicitCapacity(minCapacity);
+    }
+
+
+    private void ensureExplicitCapacity(int minCapacity) {
+        if (minCapacity - elementData.length > 0) {
+            grow(minCapacity);
+        }
+    }
+
     @Override
     public boolean remove(Object o) {
+        return false;
+    }
+
+    private void grow(int minCapacity) {
+        Object[] data = this.elementData;
+        int oldCapacity = data.length;
+        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        if (newCapacity < minCapacity) {
+            newCapacity = minCapacity;
+        }
+        if (newCapacity > MAX_ARRAY_SIZE) {
+            newCapacity = MAX_ARRAY_SIZE;
+        }
+        this.elementData = Arrays.copyOf(data, newCapacity);
+    }
+
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+        {
+            throw new OutOfMemoryError();
+        }
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+                Integer.MAX_VALUE :
+                MAX_ARRAY_SIZE;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> collection) {
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> collection) {
+        return false;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> collection) {
         return false;
     }
 
@@ -104,23 +191,39 @@ public class ConcurrentArrayList<E> implements List<E> {
     }
 
     @Override
-    public Object get(int index) {
-        return null;
+    public E get(int index) {
+
+        return tabAt(index);
+    }
+
+
+    private E tabAt(int i) {
+        return (E) U.getObjectVolatile(elementData, ((long) i << ASHIFT) + BASE);
     }
 
     @Override
-    public Object set(int index, Object element) {
-        return null;
+    public synchronized E remove(int index) {
+        rangeCheck(index);
+
+        E oldValue = (E) elementData[index];
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(elementData, index + 1, elementData, index,
+                    numMoved);
+        }
+        elementData[--size] = null;
+        return oldValue;
     }
 
-    @Override
-    public void add(int index, Object element) {
-
+    private void rangeCheck(int index) {
+        if (index >= size) {
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
     }
 
-    @Override
-    public Object remove(int index) {
-        return null;
+    private String outOfBoundsMsg(int index) {
+        return "Index: "+index+", Size: "+size;
     }
 
     @Override
@@ -134,38 +237,30 @@ public class ConcurrentArrayList<E> implements List<E> {
     }
 
     @Override
-    public ListIterator listIterator() {
+    public ListIterator<E> listIterator() {
         return null;
     }
 
     @Override
-    public ListIterator listIterator(int index) {
+    public ListIterator<E> listIterator(int i) {
         return null;
     }
 
     @Override
-    public List subList(int fromIndex, int toIndex) {
+    public List<E> subList(int i, int i1) {
         return null;
     }
 
     @Override
-    public boolean retainAll(Collection c) {
-        return false;
+    public E set(int index, Object element) {
+        return null;
     }
 
     @Override
-    public boolean removeAll(Collection c) {
-        return false;
+    public void add(int index, Object element) {
+
     }
 
-    @Override
-    public boolean containsAll(Collection c) {
-        return false;
-    }
 
-    @Override
-    public Object[] toArray(Object[] a) {
-        return new Object[0];
-    }
 }
-*/
+
