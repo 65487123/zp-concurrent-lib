@@ -1,3 +1,4 @@
+import com.lzp.util.concurrent.blockingQueue.nolock.NoLockBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.latch.CountDownLatch;
 import com.lzp.util.concurrent.list.ConcurrentArrayList;
@@ -17,60 +18,61 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date: 2020/8/9 11:46
  */
 public class Test {
-    static volatile int a = ThreadLocalRandom.current().nextInt(10000);
-    static volatile int b = ThreadLocalRandom.current().nextInt(10000);
-    static AtomicInteger c = new AtomicInteger();
-    static Object[] d = new Object[ThreadLocalRandom.current().nextInt(10000)];
-    static int r = d.length;
+
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
         //Map<String,String> map = new ConcurrentHashMap(15000000);
         CountDownLatch countDownLatch = new CountDownLatch(2000000);
         List list = new ConcurrentArrayList();
-
+        NoLockBlockingQueue blockingQueue = new NoLockBlockingQueue(1000000,4);
         long now  = System.currentTimeMillis();
         new Thread(() -> {
-            for (int i = 0; i < 200000; i++) {
-                list.add(String.valueOf(i));
-                countDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 200000; i < 400000; i++) {
-                list.add(String.valueOf(i));
-                countDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 400000; i < 600000; i++) {
-                list.add(String.valueOf(i));
-                countDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 600000; i < 800000; i++) {
-                list.add(String.valueOf(i));
-                countDownLatch.countDown();
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 800000; i < 1000000; i++) {
-                list.add(String.valueOf(i));
-                countDownLatch.countDown();
+            for (int i = 0; i < 500000; i++) {
+                try {
+                    blockingQueue.put(String.valueOf(i),0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
         new Thread(() -> {
             for (int i = 0; i < 500000; i++) {
-                list.get(i);
-                countDownLatch.countDown();
+                try {
+                    blockingQueue.put(String.valueOf(i),1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
         new Thread(() -> {
             for (int i = 0; i < 500000; i++) {
-                list.get(i);
+                try {
+                    blockingQueue.put(String.valueOf(i),2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 500000; i++) {
+                try {
+                    blockingQueue.put(String.valueOf(i),3);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i < 2000000; i++) {
+                try {
+                    blockingQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 countDownLatch.countDown();
             }
         }).start();
+
         countDownLatch.await();
         System.out.println(System.currentTimeMillis() - now);
 

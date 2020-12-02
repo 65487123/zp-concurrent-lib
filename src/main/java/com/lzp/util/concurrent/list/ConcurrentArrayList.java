@@ -19,6 +19,7 @@ package com.lzp.util.concurrent.list;
 
 import sun.misc.Unsafe;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,7 +43,7 @@ import java.util.ListIterator;
  * @date: 2020/11/25 14:45
  */
 
-public class ConcurrentArrayList<E> implements List<E> {
+public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E> {
     private final long BASE;
 
     private final int ASHIFT;
@@ -51,9 +52,21 @@ public class ConcurrentArrayList<E> implements List<E> {
 
     private static final Unsafe U;
 
-    private Object[] elementData;
+    private transient Object[] elementData;
 
     private int size;
+
+    private class Itr implements  Iterator<E>{
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public E next() {
+            return null;
+        }
+    }
 
     static {
         try {
@@ -192,7 +205,6 @@ public class ConcurrentArrayList<E> implements List<E> {
 
     @Override
     public E get(int index) {
-
         return tabAt(index);
     }
 
