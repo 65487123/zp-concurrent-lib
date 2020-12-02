@@ -22,7 +22,9 @@
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk2.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk3.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk4.png)
-
+##### 自测截图解释
+    测试结果，不同主机结果不同。实际上，我后面换了台主机，测试结果差距都在十倍以上。具体差距
+    可以拉代码测测
 
 ##### 缺点
     比较占资源（CPU时间片、CPU缓存行）。所以并不适合所有场景。
