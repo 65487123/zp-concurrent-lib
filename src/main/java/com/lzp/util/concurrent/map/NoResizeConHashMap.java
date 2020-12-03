@@ -40,6 +40,9 @@ import java.util.*;
  * @date: 2020/11/18 15:54
  */
 public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
+
+    private static final long serialVersionUID = 8681454561115892189L;
+
     public static final int MAXIMUM_CAPACITY = 2147483647;
 
     private static final Unsafe U;

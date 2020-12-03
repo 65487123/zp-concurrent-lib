@@ -21,11 +21,8 @@ import sun.misc.Unsafe;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * Description:线程安全的ArrayList
@@ -43,7 +40,10 @@ import java.util.ListIterator;
  * @date: 2020/11/25 14:45
  */
 
-public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E> {
+public class ConcurrentArrayList<E> implements List<E>, Serializable, Iterable<E> {
+
+    private static final long serialVersionUID = 8681452561125892189L;
+
     private final long BASE;
 
     private final int ASHIFT;
@@ -54,17 +54,28 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
 
     private transient Object[] elementData;
 
-    private int size;
+    private volatile int size;
 
-    private class Itr implements  Iterator<E>{
+    private class Itr implements Iterator<E> {
+
+        private Object[] elementDataView;
+        private int index = 0;
+
+        {
+            synchronized (this) {
+                elementDataView = new Object[size];
+                System.arraycopy(elementData, 0, elementDataView, 0, size);
+            }
+        }
+
         @Override
         public boolean hasNext() {
-            return false;
+            return index != elementDataView.length;
         }
 
         @Override
         public E next() {
-            return null;
+            return (E) elementDataView[index++];
         }
     }
 
@@ -77,6 +88,7 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
             throw new RuntimeException("Class initialization failed: Unsafe initialization failed");
         }
     }
+
     public ConcurrentArrayList(int initialCapacity) {
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Illegal Capacity: " +
@@ -109,22 +121,42 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
 
     @Override
     public boolean contains(Object o) {
+        Object[] elementDataView;
+        {
+            synchronized (this) {
+                elementDataView = new Object[size];
+                System.arraycopy(elementData, 0, elementDataView, 0, size);
+            }
+        }
+        if (o == null) {
+            for (Object value : elementDataView) {
+                if (null == value) {
+                    return true;
+                }
+            }
+        } else {
+            for (Object value : elementDataView) {
+                if (o.equals(value)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
     @Override
-    public Iterator iterator() {
-        return null;
+    public Iterator<E> iterator() {
+        return new Itr();
     }
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        return this.elementData;
     }
 
     @Override
     public <T> T[] toArray(T[] ts) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -146,7 +178,22 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
     }
 
     @Override
-    public boolean remove(Object o) {
+    public synchronized boolean remove(Object o) {
+        if (o == null) {
+            for (int index = 0; index < size; index++) {
+                if (elementData[index] == null) {
+                    fastRemove(index);
+                    return true;
+                }
+            }
+        } else {
+            for (int index = 0; index < size; index++) {
+                if (o.equals(elementData[index])) {
+                    fastRemove(index);
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -163,48 +210,50 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
         this.elementData = Arrays.copyOf(data, newCapacity);
     }
 
-    private static int hugeCapacity(int minCapacity) {
-        if (minCapacity < 0) // overflow
-        {
-            throw new OutOfMemoryError();
+    private synchronized void fastRemove(int index) {
+        int numMoved = size - index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(elementData, index + 1, elementData, index,
+                    numMoved);
         }
-        return (minCapacity > MAX_ARRAY_SIZE) ?
-                Integer.MAX_VALUE :
-                MAX_ARRAY_SIZE;
+        elementData[--size] = null;
     }
 
     @Override
     public boolean containsAll(Collection<?> collection) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean retainAll(Collection<?> collection) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean addAll(Collection c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean addAll(int index, Collection c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public void clear() {
-
+    public synchronized void clear() {
+        this.elementData = new Object[10];
     }
 
     @Override
     public E get(int index) {
+        if (index > size - 1) {
+            throw new IndexOutOfBoundsException();
+        }
         return tabAt(index);
     }
 
@@ -235,44 +284,142 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable,Iterable<E>
     }
 
     private String outOfBoundsMsg(int index) {
-        return "Index: "+index+", Size: "+size;
+        return "Index: " + index + ", Size: " + size;
     }
 
     @Override
     public int indexOf(Object o) {
-        return 0;
+        Object[] elementDataView;
+        {
+            synchronized (this) {
+                elementDataView = new Object[size];
+                System.arraycopy(elementData, 0, elementDataView, 0, size);
+            }
+        }
+        if (o == null) {
+            for (int i = 0; i < elementDataView.length; i++) {
+                if (null == elementDataView[i]) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < elementDataView.length; i++) {
+                if (o.equals(elementDataView[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        return 0;
+        Object[] elementDataView;
+        int index = -1;
+        {
+            synchronized (this) {
+                elementDataView = new Object[size];
+                System.arraycopy(elementData, 0, elementDataView, 0, size);
+            }
+        }
+        if (o == null) {
+            for (int i = 0; i < elementDataView.length; i++) {
+                if (null == elementDataView[i]) {
+                    index = i;
+                }
+            }
+        } else {
+            for (int i = 0; i < elementDataView.length; i++) {
+                if (o.equals(elementDataView[i])) {
+                    index = i;
+                }
+            }
+        }
+        return index;
     }
 
     @Override
     public ListIterator<E> listIterator() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ListIterator<E> listIterator(int i) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public List<E> subList(int i, int i1) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public E set(int index, Object element) {
-        return null;
+    public synchronized E set(int index, Object element) {
+        rangeCheck(index);
+        E oldValue = (E) elementData[index];
+        elementData[index] = element;
+        return oldValue;
     }
 
     @Override
-    public void add(int index, Object element) {
+    public synchronized void add(int index, Object element) {
+        rangeCheckForAdd(index);
+        ensureCapacityInternal(size + 1);
+        System.arraycopy(elementData, index, elementData, index + 1,
+                size - index);
+        elementData[index] = element;
+        size++;
+    }
+
+    private void rangeCheckForAdd(int index) {
+        if (index > size || index < 0) {
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
+    }
+
+    private synchronized void writeObject(java.io.ObjectOutputStream s)
+            throws java.io.IOException {
+
+        // Write out all elements in the proper order.
+        for (int i = 0; i < size; i++) {
+            s.writeObject(elementData[i]);
+        }
 
     }
 
+    /**
+     * Reconstitute the <tt>ArrayList</tt> instance from a stream (that is,
+     * deserialize it).
+     */
+    private synchronized void readObject(java.io.ObjectInputStream s)
+            throws java.io.IOException, ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        Class cls = this.getClass();
+        Field base = cls.getDeclaredField("BASE");
+        base.setAccessible(true);
+        base.set(this, U.arrayBaseOffset(Object[].class));
+        Field aSft = cls.getDeclaredField("ASHIFT");
+        aSft.setAccessible(true);
+        aSft.set(this, 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class)));
+        this.elementData = new Object[10];
+        for (; ; ) {
+            try {
+                this.add((E) s.readObject());
+            } catch (Exception e) {
+                break;
+            }
+        }
+    }
 
+    @Override
+    public synchronized String toString() {
+        StringBuilder stringBuilder = new StringBuilder(size << 1).append("[");
+        int size = this.size;
+        Object[] eleData = this.elementData;
+        for (int i = 0; i < size; i++) {
+            stringBuilder.append(eleData[i]).append(",");
+        }
+        stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
+        return stringBuilder.toString();
+    }
 }
 

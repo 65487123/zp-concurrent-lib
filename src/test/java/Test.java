@@ -23,8 +23,14 @@ public class Test {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
         //Map<String,String> map = new ConcurrentHashMap(15000000);
         CountDownLatch countDownLatch = new CountDownLatch(2000000);
-        List list = new ConcurrentArrayList();
-        NoLockBlockingQueue blockingQueue = new NoLockBlockingQueue(1000000,4);
+        List<String> list = new ConcurrentArrayList();
+        for (int i = 0; i < 1000000; i++) {
+            list.add(String.valueOf(i));
+        }
+        long now = System.currentTimeMillis();
+        list.toString();
+        System.out.println(System.currentTimeMillis()-now);
+        /*NoLockBlockingQueue blockingQueue = new NoLockBlockingQueue(1000000,4);
         long now  = System.currentTimeMillis();
         new Thread(() -> {
             for (int i = 0; i < 500000; i++) {
@@ -74,7 +80,7 @@ public class Test {
         }).start();
 
         countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);
+        System.out.println(System.currentTimeMillis() - now);*/
 
         /*now = System.currentTimeMillis();
         for (Map.Entry<String, String> entry : map.entrySet()) {
