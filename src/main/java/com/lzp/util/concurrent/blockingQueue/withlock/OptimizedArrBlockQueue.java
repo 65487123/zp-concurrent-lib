@@ -15,6 +15,7 @@
 
 package com.lzp.util.concurrent.blockingQueue.withlock;
 
+
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,6 +37,46 @@ import java.util.concurrent.TimeUnit;
  */
 public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
+
+    private class Itr implements Iterator<E> {
+
+        private Object[] elementDataView;
+        private int index = 0;
+
+        {
+            synchronized (this) {
+                synchronized (items) {
+                    int temp;
+                    if ((temp = takeIndex - putIndex) < 0) {
+                        elementDataView = new Object[-temp];
+                        System.arraycopy(items, takeIndex, elementDataView, 0, -temp);
+                    } else if (temp == 0) {
+                        if (items[putIndex] == null) {
+                            elementDataView = new Object[0];
+                        } else {
+                            elementDataView = new Object[items.length];
+                            System.arraycopy(items, takeIndex, elementDataView, 0, items.length - takeIndex);
+                            System.arraycopy(items, 0, elementDataView, putIndex + 1, takeIndex);
+                        }
+                    } else {
+                        elementDataView = new Object[items.length - temp];
+                        System.arraycopy(items, takeIndex, elementDataView, 0, items.length - takeIndex);
+                        System.arraycopy(items, 0, elementDataView, items.length - takeIndex, putIndex);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index != elementDataView.length;
+        }
+
+        @Override
+        public E next() {
+            return (E) elementDataView[index++];
+        }
+    }
 
     /**
      * 存元素的容器，并且作为读锁。
@@ -61,7 +102,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
 
     @Override
     public Iterator<E> iterator() {
-        return null;
+        return new Itr();
     }
 
     @Override
@@ -199,7 +240,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
 
     @Override
     public E peek() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     private void enqueue(E e) {
