@@ -30,6 +30,7 @@
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oa2.png)
 #### 测试总结
     关闭JIT、内存足够的情况下，一个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的2倍
-    左右，四个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的6倍以上。
+    左右，四个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的6倍以上。(主机不同，结果也
+    不同，实际我用另一台cpu主频比较高的主机，测试结果是将近十倍的差距）
     生产者消费者线程数量越多，性能差距越大
    
