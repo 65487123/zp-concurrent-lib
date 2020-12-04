@@ -51,8 +51,15 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
      */
     private List<FutureCallback<R>> futureCallbacks = new ArrayList<>();
 
-    public ListenableFuture(Callable<R> runnable) {
-        this.callable = runnable;
+    public ListenableFuture(Callable<R> callable) {
+        this.callable = callable;
+    }
+
+    public ListenableFuture(Runnable runnable) {
+        this.callable = () -> {
+            runnable.run();
+            return null;
+        };
     }
 
 

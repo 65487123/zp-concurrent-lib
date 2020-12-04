@@ -39,12 +39,16 @@ public class ScheduledThreadPoolExecutor extends ThreadPoolExecutor
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        ScheduledFutureImp<?> scheduledFuture = new ScheduledFutureImp<>(command,delay,unit);
+        execute(scheduledFuture);
+        return scheduledFuture;
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        ScheduledFutureImp<V> scheduledFuture = new ScheduledFutureImp<>(callable, delay, unit);
+        execute(scheduledFuture);
+        return scheduledFuture;
     }
 
     @Override
