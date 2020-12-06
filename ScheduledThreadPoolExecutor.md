@@ -1,22 +1,17 @@
-# ListenableFuture
- 实现了java.util.concurrent.Future接口，并且增加了添加异步回调功能
+# ScheduledThreadPoolExecutor
+ 实现了ScheduledExecutorService的线程池
  
 # 功能
-    Future接口定义的功能都实现了，新加了一个添加回调方法的功能
-    /**
-     * @param futureCallback 回调接口实现类
-     * @description 添加回调任务。回调任务是可以添加多个的,不管添加几个,都会执行
-     */
-    public void addCallback(FutureCallback<R> futureCallback)
+    和juc.ScheduledThreadPoolExecutor功能一样，可以用来实现单次延迟任务、
+    固定频率定时任务、固定间隔定时任务。
     
     
-# 使用方法
-    1、new一个com.lzp.util.concurrent.threadpool.ThreadPoolExecutor
-    2、执行线程池的submit(Callable<T> task)方法，会返回一个Future
-    3、用ListenableFuture接收
-    4、可以通过get()阻塞获取执行结果，也可以通过addCallback添加异步回调方法
-# 例子
-![example](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/FutureDemo.png)   
+# 特点
+    时间间隔稳定(jdk自带的也很稳定)
+# 实现这个类的原因
+    这个类倒是没有对JDK中提供的ScheduledThreadPoolExecutor做了明显的优化，
+    实现这个类主要是让我这一套线程池功能更完善，并且通过实现这个类来更深层次
+    了解这个类实现的接口的规范、定时任务、延迟队列主要实现原理等等。
    
           
 
