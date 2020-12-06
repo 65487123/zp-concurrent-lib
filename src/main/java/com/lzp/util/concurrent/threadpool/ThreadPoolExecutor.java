@@ -239,6 +239,21 @@ public class ThreadPoolExecutor implements ExecutorService {
         this.timeout = timeout;
     }
 
+    /**
+     * 线程池构造器，额外线程超时时间单位为秒
+     * 使用默认拒绝策略(抛异常),默认线程工厂
+     */
+    public ThreadPoolExecutor(int coreNum, int maxNum, int timeout, BlockingQueue blockingQueue) {
+        this(coreNum, maxNum, timeout, blockingQueue, Executors.defaultThreadFactory(), new AbortPolicy());
+    }
+
+    /**
+     * 线程池构造器，额外线程超时时间单位为秒
+     * 使用默认线程工厂
+     */
+    public ThreadPoolExecutor(int coreNum, int maxNum, int timeout, BlockingQueue blockingQueue, RejectExecuHandler rejectedExecutionHandler) {
+        this(coreNum, maxNum, timeout, blockingQueue, Executors.defaultThreadFactory(), rejectedExecutionHandler);
+    }
 
     /**
      * 线程池构造器，额外线程超时时间单位为秒
@@ -323,6 +338,9 @@ public class ThreadPoolExecutor implements ExecutorService {
                 worker.thread.interrupt();
             }
         }
+        synchronized (this) {
+            this.notifyAll();
+        }
         return new ArrayList(blockingQueue);
     }
 
@@ -342,9 +360,6 @@ public class ThreadPoolExecutor implements ExecutorService {
         ThreadPoolExecutor executorService = this;
         this.execute(executorService::stop);
         this.shutdown = true;
-        synchronized (this) {
-            this.notifyAll();
-        }
     }
 
 
@@ -527,7 +542,7 @@ public class ThreadPoolExecutor implements ExecutorService {
     /**
      * 调用shutDown时会用到，中断空闲的线程
      */
-    private void stop() {
+    protected void stop() {
         this.shutdownNow = true;
         while (workerList.size() != 1) {
             synchronized (workerList) {
@@ -545,5 +560,13 @@ public class ThreadPoolExecutor implements ExecutorService {
         synchronized (this) {
             this.notifyAll();
         }
+    }
+
+    protected BlockingQueue getBlockingQueue() {
+        return this.blockingQueue;
+    }
+
+    protected void setShutdown() {
+        this.shutdown = true;
     }
 }

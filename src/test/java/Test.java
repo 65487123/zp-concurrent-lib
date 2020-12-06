@@ -1,6 +1,8 @@
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.latch.CountDownLatch;
+import com.lzp.util.concurrent.threadpool.ScheduledFutureImp;
+import com.lzp.util.concurrent.threadpool.ScheduledThreadPoolExecutor;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -18,93 +20,40 @@ public class Test {
 
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        //Map<String,String> map = new ConcurrentHashMap(15000000);
-        CountDownLatch countDownLatch = new CountDownLatch(2000000);
-        BlockingQueue<Integer> blockingQueue = new OptimizedArrBlockQueue<>(100);
+        com.lzp.util.concurrent.threadpool.ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+        System.out.println(System.currentTimeMillis());
+        Future future = scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("第一个定时任务:"+System.currentTimeMillis());
+            }
+        },2000,3000, TimeUnit.MILLISECONDS);
+        scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("第二个定时任务:"+System.currentTimeMillis());
+            }
+        },1000,3000, TimeUnit.MILLISECONDS);
+        Thread.sleep(10000);
+        System.out.println(future.isDone());
+        scheduledThreadPoolExecutor.shutdownNow();
 
-        AtomicInteger sum = new AtomicInteger();
-        long now  = System.currentTimeMillis();
-        new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();new Thread(() -> {
-            for (int i = 0; i < 250000; i++) {
-                try {
-                    blockingQueue.put(ThreadLocalRandom.current().nextInt(100));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        //future.get();
+        System.out.println(future.isDone());
+        System.out.println(future.isCancelled());
 
-        new Thread(() -> {
-            for (int i = 0; i < 2000000; i++) {
-                try {
-                    sum.addAndGet(blockingQueue.take());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                countDownLatch.countDown();
+        /*BlockingQueue<Runnable> blockingQueue = new DelayQueue();
+        System.out.println(System.currentTimeMillis());
+        blockingQueue.put(new ScheduledFutureImp(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("第二个定时任务:"+System.currentTimeMillis());
             }
-        }).start();
+        },2000,3000, TimeUnit.MILLISECONDS, false, blockingQueue));
+        System.out.println(blockingQueue.take());
+        System.out.println(System.currentTimeMillis());
 
-        countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);
-        System.out.println(sum);
+*/
         /*now = System.currentTimeMillis();
         for (Map.Entry<String, String> entry : map.entrySet()) {
         }

@@ -65,9 +65,9 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
 
     @Override
     public void run() {
-        this.thread = Thread.currentThread();
         try {
             if (this.state != IS_CANCELED) {
+                this.thread = Thread.currentThread();
                 result = callable.call();
                 //有可能在这上下两行中间被意外中断(cancel()方法里的逻辑)，所以下面第二行需要清除一次中断标记
                 this.thread = null;
@@ -96,17 +96,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
             Thread.interrupted();
             state = CATCH_THROWABLE;
             synchronized (this) {
-                this.notifyAll();
-                if (futureCallbacks.size() != 0) {
-                    for (FutureCallback<R> futureCallback : futureCallbacks) {
-                        try {
-                            futureCallback.onFailure(t);
-                        } catch (Throwable e) {
-                            e.printStackTrace(System.err);
-                        }
-                    }
-                    futureCallbacks.clear();
-                }
+                notifyAndExecuteCallBack(t);
             }
         }
     }
@@ -126,7 +116,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                     //走到这里，有可能已经成功完成了(包括抛异常)，但是不管，直接把状态改为canceled,异常信息也改为cancel异常
                     this.t = new CancellationException();
                     this.state = IS_CANCELED;
-                    //有可能刚把状态设为canceled,那边任务才刚跑完，又把状态设为正常结束了，任务结束，会唤醒阻塞get()结果的线程，或者把回调方法丢进执行器
+                    //有可能刚把状态设为canceled,那边任务才刚跑完，又把状态设为正常结束了，任务结束，会唤醒阻塞get()结果的线程，或者执行回调方法
                     if (mayInterruptIfRunning) {
                         //判断是否还在执行，如果任务还在执行就中断
                         if (this.thread != null) {
@@ -140,19 +130,24 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                 }
                 synchronized (this) {
                     this.state = IS_CANCELED;
-                    if (futureCallbacks.size() != 0) {
-                        for (FutureCallback<R> futureCallback : futureCallbacks) {
-                            try {
-                                futureCallback.onFailure(t);
-                            } catch (Throwable e) {
-                                e.printStackTrace(System.err);
-                            }
-                        }
-                        futureCallbacks.clear();
-                    }
+                    notifyAndExecuteCallBack(t);
                     return true;
                 }
             }
+        }
+    }
+
+    private void notifyAndExecuteCallBack(Throwable t) {
+        this.notifyAll();
+        if (futureCallbacks.size() != 0) {
+            for (FutureCallback<R> futureCallback : futureCallbacks) {
+                try {
+                    futureCallback.onFailure(t);
+                } catch (Throwable e) {
+                    e.printStackTrace(System.err);
+                }
+            }
+            futureCallbacks.clear();
         }
     }
 
@@ -178,6 +173,7 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
             }
         }
         if (this.state == CATCH_THROWABLE) {
+            //t有可能是CancellationException(刚抛异常就被cancel)
             throw new ExecutionException(t);
         } else {
             return result;
@@ -228,5 +224,54 @@ public class ListenableFuture<R> implements Runnable, Future<R> {
                 this.futureCallbacks.add(futureCallback);
             }
         }
+    }
+
+    /**
+     *  给子类使用(定时任务future)
+     */
+    protected void call() throws Exception {
+        this.callable.call();
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected int getState() {
+        return this.state;
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected Throwable getThrowable() {
+        return this.t;
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected void setState(int state) {
+        this.state = state;
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected void setThrowable(Throwable t) {
+        this.t = t;
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected Thread getThread() {
+        return this.thread;
+    }
+
+    /**
+     * 给子类使用(定时任务future)
+     */
+    protected void setThread(Thread thread) {
+        this.thread = thread;
     }
 }

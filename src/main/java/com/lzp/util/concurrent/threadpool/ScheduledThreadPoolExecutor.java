@@ -17,6 +17,8 @@
 package com.lzp.util.concurrent.threadpool;
 
 
+
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -29,35 +31,66 @@ public class ScheduledThreadPoolExecutor extends ThreadPoolExecutor
         implements ScheduledExecutorService {
 
 
-    public ScheduledThreadPoolExecutor(int coreNum, int maxNum, int timeout, BlockingQueue blockingQueue, ThreadFactory threadFactory, RejectExecuHandler rejectedExecutionHandler) {
-        super(coreNum, maxNum, timeout, blockingQueue, threadFactory, rejectedExecutionHandler);
+
+    public ScheduledThreadPoolExecutor(int coreNum) {
+        super(coreNum, Integer.MAX_VALUE, 0, new DelayQueue());
     }
 
-    public ScheduledThreadPoolExecutor(int coreNum, int maxNum, int timeout, BlockingQueue blockingQueue, ThreadFactory threadFactory) {
-        super(coreNum, maxNum, timeout, blockingQueue, threadFactory);
+    public ScheduledThreadPoolExecutor(int coreNum, ThreadFactory threadFactory) {
+        super(coreNum, Integer.MAX_VALUE, 0, new DelayQueue(), threadFactory);
+    }
+
+    public ScheduledThreadPoolExecutor(int coreNum, RejectExecuHandler rejectExecuHandler) {
+        super(coreNum, Integer.MAX_VALUE, 0, new DelayQueue(), rejectExecuHandler);
+    }
+
+    public ScheduledThreadPoolExecutor(int coreNum, ThreadFactory threadFactory, RejectExecuHandler rejectExecuHandler) {
+        super(coreNum, Integer.MAX_VALUE, 0, new DelayQueue(), threadFactory, rejectExecuHandler);
     }
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        ScheduledFutureImp<?> scheduledFuture = new ScheduledFutureImp<>(command,delay,unit);
+        ScheduledFutureImp<?> scheduledFuture = new ScheduledFutureImp(command,delay,unit,this.getBlockingQueue());
         execute(scheduledFuture);
         return scheduledFuture;
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        ScheduledFutureImp<V> scheduledFuture = new ScheduledFutureImp<>(callable, delay, unit);
+        ScheduledFutureImp<V> scheduledFuture = new ScheduledFutureImp<>(callable, delay, unit,this.getBlockingQueue());
         execute(scheduledFuture);
         return scheduledFuture;
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        ScheduledFutureImp<?> scheduledFuture = new ScheduledFutureImp<>(command, initialDelay, period, unit, true, this.getBlockingQueue());
+        execute(scheduledFuture);
+        return scheduledFuture;
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        ScheduledFutureImp<?> scheduledFuture = new ScheduledFutureImp<>(command, initialDelay, delay, unit, false, this.getBlockingQueue());
+        execute(scheduledFuture);
+        return scheduledFuture;
+    }
+
+    @Override
+    public List<Runnable> shutdownNow() {
+        for (Object future : this.getBlockingQueue()) {
+            ((ScheduledFuture) future).cancel(false);
+        }
+        return super.shutdownNow();
+    }
+
+    @Override
+    public void shutdown() {
+        ThreadPoolExecutor executorService = this;
+        this.execute(new ScheduledFutureImp(executorService::stop, 0, TimeUnit.SECONDS, this.getBlockingQueue()));
+        this.setShutdown();
+        for (Object future : this.getBlockingQueue()) {
+            ((ScheduledFuture) future).cancel(false);
+        }
     }
 }
