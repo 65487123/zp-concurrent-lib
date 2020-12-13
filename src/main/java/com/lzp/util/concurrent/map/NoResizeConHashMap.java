@@ -367,6 +367,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             Node<K, V> newNode = new Node<>(key, value, null, h);
             if (!U.compareAndSwapObject(TABLE, BASE + ((long) i << ASHIFT), null, newNode)) {
                 Node<K, V> node;
+                //java中,while(true)和for(;;)编译后生成的字节码一模一样
                 while (true) {
                     synchronized (node = tabAt(tab, i)) {
                         if (node == (node = tabAt(tab, i))) {
@@ -620,12 +621,12 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                         stringBuilder.append(node.key + "=" + node.val + ",");
                     } while ((node = node.next) != null);
                 }*/
-                if (node.key !=null){
+                if (node.key != null) {
                     stringBuilder.append(node.key + "=" + node.val + ",");
-                }else {
+                } else {
                     continue;
                 }
-                while (node.next!=null){
+                while (node.next != null) {
                     node = node.next;
                     stringBuilder.append(node.key + "=" + node.val + ",");
                 }

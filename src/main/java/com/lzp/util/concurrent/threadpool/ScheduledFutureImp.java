@@ -163,4 +163,8 @@ public class ScheduledFutureImp<R> extends ListenableFuture<R> implements Schedu
         }
     }
 
+    @Override
+    public String toString() {
+        return "delayed: " + getDelay(TimeUnit.MILLISECONDS) + "ms";
+    }
 }

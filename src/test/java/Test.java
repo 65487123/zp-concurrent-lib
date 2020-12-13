@@ -1,4 +1,5 @@
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
+import com.lzp.util.concurrent.blockingQueue.withlock.DelayQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.latch.CountDownLatch;
 import com.lzp.util.concurrent.threadpool.ScheduledFutureImp;
@@ -20,28 +21,81 @@ public class Test {
 
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        com.lzp.util.concurrent.threadpool.ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-        System.out.println(System.currentTimeMillis());
-        Future future = scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
+        BlockingQueue blockingQueue = new DelayQueue();
+        CountDownLatch countDownLatch = new CountDownLatch(5000000);
+        Delayed delayed = new Delayed() {
             @Override
-            public void run() {
-                System.out.println("第一个定时任务:"+System.currentTimeMillis());
+            public long getDelay(TimeUnit unit) {
+                return 0;
             }
-        },2000,3000, TimeUnit.MILLISECONDS);
-        scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
+
             @Override
-            public void run() {
-                System.out.println("第二个定时任务:"+System.currentTimeMillis());
+            public int compareTo(Delayed o) {
+                return 1;
             }
-        },1000,3000, TimeUnit.MILLISECONDS);
-        Thread.sleep(10000);
-        System.out.println(future.isDone());
-        scheduledThreadPoolExecutor.shutdownNow();
-
-        //future.get();
-        System.out.println(future.isDone());
-        System.out.println(future.isCancelled());
-
+        };
+        long now = System.currentTimeMillis();
+        new Thread(() -> {
+            for (int i = 0; i <1000000 ; i++) {
+                try {
+                    blockingQueue.put(delayed);
+                    countDownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i <1000000 ; i++) {
+                try {
+                    blockingQueue.put(delayed);
+                    countDownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i <1000000 ; i++) {
+                try {
+                    blockingQueue.put(delayed);
+                    countDownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i <1000000 ; i++) {
+                try {
+                    blockingQueue.put(delayed);
+                    countDownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i <1000000 ; i++) {
+                try {
+                    blockingQueue.put(delayed);
+                    countDownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            for (int i = 0; i <5000000 ; i++) {
+                try {
+                    blockingQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        countDownLatch.await();
+        System.out.println(System.currentTimeMillis() - now);
         /*BlockingQueue<Runnable> blockingQueue = new DelayQueue();
         System.out.println(System.currentTimeMillis());
         blockingQueue.put(new ScheduledFutureImp(new Runnable() {

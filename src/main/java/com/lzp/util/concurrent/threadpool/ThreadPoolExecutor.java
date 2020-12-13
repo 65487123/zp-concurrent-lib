@@ -158,6 +158,7 @@ public class ThreadPoolExecutor implements ExecutorService {
                     workerSum.decrementAndGet();
                     additionThreadMax = false;
                 } else {
+                    //java中,while(true)和for(;;)编译后生成的字节码一模一样
                     while (true) {
                         firstTask.run();
                         firstTask = null;

@@ -84,6 +84,7 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
     @Override
     public E take() throws InterruptedException {
         E r;
+        //java中,while(true)和for(;;)编译后生成的字节码一模一样
         while (true) {
             for (int i = 0; i < tail.length; i += 16) {
                 int p = tail[i] & this.m;
