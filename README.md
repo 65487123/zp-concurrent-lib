@@ -21,6 +21,8 @@
 
 ## com.lzp.util.concurrent.blockingQueue.withlock
 [OptimizedArrBlockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OptimizedArrBlockQueue.md)
+
+[DelayQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DelayQueue.md)
 ## com.lzp.util.concurrent.blockingQueue.nolock
 [NoLockBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
 
