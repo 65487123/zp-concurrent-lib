@@ -43,7 +43,7 @@
      private static class PriorityQueue<E> extends AbstractQueue<E>
              implements java.io.Serializable {
 
-         private static final long serialVersionUID = -7760885057309804111L;
+         private static final long serialVersionUID = -7764885057309804111L;
 
          transient Object[] queue = new Object[10];
 
@@ -114,17 +114,6 @@
          }
 
 
-         boolean removeEq(Object o) {
-             for (int i = 0; i < size; i++) {
-                 if (o == queue[i]) {
-                     removeAt(i);
-                     return true;
-                 }
-             }
-             return false;
-         }
-
-
          @Override
          public boolean contains(Object o) {
              return indexOf(o) != -1;
@@ -184,11 +173,9 @@
              return result;
          }
 
-         @SuppressWarnings("unchecked")
          private E removeAt(int i) {
-             // assert i >= 0 && i < size;
              int s = --size;
-             if (s == i) // removed last element
+             if (s == i)
              {
                  queue[i] = null;
              } else {
