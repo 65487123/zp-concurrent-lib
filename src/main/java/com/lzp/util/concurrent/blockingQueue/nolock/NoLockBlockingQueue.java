@@ -18,7 +18,7 @@ package com.lzp.util.concurrent.blockingQueue.nolock;
 
 /**
  * Description:高性能阻塞队列，适用于多个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
- * 使用方法：消费者线程必须得设置为2的次方，不然性能反而比jdk自带的队列差
+ * 使用方法：消费者线程必须得设置为2的次方
  *
  * 和 {@link DependenNoLocBlocQue}适用场景的区别：
  * 这个队列适用于生产者生产消息与消费者消费消息无依赖关系

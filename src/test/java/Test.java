@@ -1,3 +1,4 @@
+import com.lzp.util.concurrent.blockingQueue.nolock.NoSideEffectNolockQueue;
 import com.lzp.util.concurrent.blockingQueue.nolock.OneToOneBlockingQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.DelayQueue;
 import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
@@ -21,25 +22,14 @@ public class Test {
 
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        BlockingQueue blockingQueue = new DelayQueue();
+        BlockingQueue blockingQueue = new NoSideEffectNolockQueue(100000);
         CountDownLatch countDownLatch = new CountDownLatch(5000000);
-        Delayed delayed = new Delayed() {
-            @Override
-            public long getDelay(TimeUnit unit) {
-                return 0;
-            }
 
-            @Override
-            public int compareTo(Delayed o) {
-                return 1;
-            }
-        };
         long now = System.currentTimeMillis();
         new Thread(() -> {
             for (int i = 0; i <1000000 ; i++) {
                 try {
-                    blockingQueue.put(delayed);
-                    countDownLatch.countDown();
+                    blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -48,8 +38,7 @@ public class Test {
         new Thread(() -> {
             for (int i = 0; i <1000000 ; i++) {
                 try {
-                    blockingQueue.put(delayed);
-                    countDownLatch.countDown();
+                    blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -58,8 +47,7 @@ public class Test {
         new Thread(() -> {
             for (int i = 0; i <1000000 ; i++) {
                 try {
-                    blockingQueue.put(delayed);
-                    countDownLatch.countDown();
+                    blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -68,8 +56,7 @@ public class Test {
         new Thread(() -> {
             for (int i = 0; i <1000000 ; i++) {
                 try {
-                    blockingQueue.put(delayed);
-                    countDownLatch.countDown();
+                    blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -78,8 +65,7 @@ public class Test {
         new Thread(() -> {
             for (int i = 0; i <1000000 ; i++) {
                 try {
-                    blockingQueue.put(delayed);
-                    countDownLatch.countDown();
+                    blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -89,6 +75,7 @@ public class Test {
             for (int i = 0; i <5000000 ; i++) {
                 try {
                     blockingQueue.take();
+                    countDownLatch.countDown();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
