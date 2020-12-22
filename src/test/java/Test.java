@@ -23,12 +23,12 @@ public class Test {
 
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        BlockingQueue blockingQueue = new NoSideEffectNolockQueue(100000);
-        CountDownLatch countDownLatch = new CountDownLatch(5000000);
+        BlockingQueue blockingQueue = new NoSideEffectNolockQueue(2);
+        CountDownLatch countDownLatch = new CountDownLatch(50000000);
 
         long now = System.currentTimeMillis();
         new Thread(() -> {
-            for (int i = 0; i <1000000 ; i++) {
+            for (int i = 0; i <10000000 ; i++) {
                 try {
                     blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
@@ -37,7 +37,7 @@ public class Test {
             }
         }).start();
         new Thread(() -> {
-            for (int i = 0; i <1000000 ; i++) {
+            for (int i = 0; i <10000000 ; i++) {
                 try {
                     blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
@@ -46,7 +46,7 @@ public class Test {
             }
         }).start();
         new Thread(() -> {
-            for (int i = 0; i <1000000 ; i++) {
+            for (int i = 0; i <10000000 ; i++) {
                 try {
                     blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
@@ -55,7 +55,7 @@ public class Test {
             }
         }).start();
         new Thread(() -> {
-            for (int i = 0; i <1000000 ; i++) {
+            for (int i = 0; i <10000000 ; i++) {
                 try {
                     blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
@@ -64,7 +64,7 @@ public class Test {
             }
         }).start();
         new Thread(() -> {
-            for (int i = 0; i <1000000 ; i++) {
+            for (int i = 0; i <10000000 ; i++) {
                 try {
                     blockingQueue.put(String.valueOf(i));
                 } catch (InterruptedException e) {
@@ -73,7 +73,7 @@ public class Test {
             }
         }).start();
         new Thread(() -> {
-            for (int i = 0; i <5000000 ; i++) {
+            for (int i = 0; i <50000000 ; i++) {
                 try {
                     blockingQueue.take();
                     countDownLatch.countDown();

@@ -17,6 +17,9 @@
  package com.lzp.util.concurrent.blockingQueue.nolock;
 
 
+ import java.util.concurrent.LinkedBlockingQueue;
+ import java.util.concurrent.ThreadPoolExecutor;
+ import java.util.concurrent.TimeUnit;
  import java.util.concurrent.atomic.AtomicInteger;
 
  /**
@@ -31,21 +34,31 @@
 
      private final int M;
 
-     private AtomicInteger head = new AtomicInteger();
+     //private final int DOUBLE_M;
 
-     private AtomicInteger tail = new AtomicInteger();
+     //private  final AtomicInteger totalSize = new AtomicInteger();
 
-     private AtomicInteger puttingWaiterCount = new AtomicInteger();
+     private final AtomicInteger head = new AtomicInteger();
 
-     private AtomicInteger takingWaiterCount = new AtomicInteger();
+     private final AtomicInteger tail = new AtomicInteger();
+
+     private final AtomicInteger puttingWaiterCount = new AtomicInteger();
+
+     private final AtomicInteger takingWaiterCount = new AtomicInteger();
 
      public NoSideEffectNolockQueue(int preferCapacity) {
+         int minCapacity = 1048576;
          if (preferCapacity <= 0) {
              throw new IllegalArgumentException();
+         } else if (preferCapacity < minCapacity) {
+             array = (E[]) new Object[minCapacity];
+             M = minCapacity - 1;
+         } else {
+             int capacity = tableSizeFor(preferCapacity);
+             array = (E[]) new Object[capacity];
+             M = capacity - 1;
          }
-         int capacity = tableSizeFor(preferCapacity);
-         array = (E[]) new Object[capacity];
-         M = capacity - 1;
+         //DOUBLE_M = M << 1;
      }
 
      @Override
@@ -53,18 +66,22 @@
          if (obj == null) {
              throw new NullPointerException();
          }
-
          int p = head.getAndIncrement() & M;
-         for (int i = 0 ;array[p] != null;i++) {
-             if (i<100){
+         for (int i = 0; array[p] != null; i++) {
+             if (puttingWaiterCount.get() == 0 && i < 50) {
                  Thread.yield();
                  continue;
              }
              puttingWaiterCount.incrementAndGet();
              synchronized (this) {
                  this.wait();
+                 while (array[p] != null) {
+                     this.notify();
+                     this.wait();
+                 }
              }
              puttingWaiterCount.decrementAndGet();
+             break;
          }
          array[p] = obj;
          if (takingWaiterCount.get() > 0) {
@@ -80,15 +97,20 @@
          E e;
          int p = tail.getAndIncrement() & M;
          for (int i = 0; (e = array[p]) == null; i++) {
-             if (i < 100) {
+             if (takingWaiterCount.get() == 0 && i < 50) {
                  Thread.yield();
                  continue;
              }
              takingWaiterCount.incrementAndGet();
              synchronized (this) {
                  this.wait();
+                 while ((e = array[p]) == null) {
+                     this.notify();
+                     this.wait();
+                 }
              }
              takingWaiterCount.decrementAndGet();
+             break;
          }
          array[p] = null;
          if (puttingWaiterCount.get() > 0) {
