@@ -20,8 +20,8 @@
  import java.util.concurrent.atomic.AtomicInteger;
 
  /**
-  * Description:高性能阻塞队列，适用于一个生产者对一个消费者（线程),无锁设计。
-  *
+  * Description:高性能阻塞队列，适用于多个生产者对多个消费者（线程),无锁设计。
+  * 特点是几乎没什么副作用
   * @author: Lu ZePing
   * @date: 2020/7/20 12:19
   */
@@ -31,23 +31,21 @@
 
      private final int M;
 
-     private final int DOUBLE_M;
-
      private AtomicInteger head = new AtomicInteger();
 
      private AtomicInteger tail = new AtomicInteger();
 
-     private AtomicInteger totalSize = new AtomicInteger();
+     private AtomicInteger puttingWaiterCount = new AtomicInteger();
 
+     private AtomicInteger takingWaiterCount = new AtomicInteger();
 
-     public NoSideEffectNolockQueue(int capacity) {
-         if (capacity <= 0) {
+     public NoSideEffectNolockQueue(int preferCapacity) {
+         if (preferCapacity <= 0) {
              throw new IllegalArgumentException();
          }
+         int capacity = tableSizeFor(preferCapacity);
          array = (E[]) new Object[capacity];
-         //int占4个字节
          M = capacity - 1;
-         DOUBLE_M = M << 1;
      }
 
      @Override
@@ -55,21 +53,23 @@
          if (obj == null) {
              throw new NullPointerException();
          }
-         if (totalSize.get() > M) {
-             while (totalSize.get() > M) {
-                 Thread.yield();
-             }
-         }
+
          int p = head.getAndIncrement() & M;
-         while (array[p] != null) {
+         for (int i = 0 ;array[p] != null;i++) {
+             if (i<100){
+                 Thread.yield();
+                 continue;
+             }
+             puttingWaiterCount.incrementAndGet();
              synchronized (this) {
                  this.wait();
              }
+             puttingWaiterCount.decrementAndGet();
          }
          array[p] = obj;
-         if (totalSize.incrementAndGet() == 1) {
+         if (takingWaiterCount.get() > 0) {
              synchronized (this) {
-                 this.notifyAll();
+                 this.notify();
              }
          }
      }
@@ -78,21 +78,22 @@
      @Override
      public E take() throws InterruptedException {
          E e;
-         if (totalSize.get() == 0) {
-             while (totalSize.get() == 0) {
-                 Thread.yield();
-             }
-         }
          int p = tail.getAndIncrement() & M;
-         while ((e = array[p]) == null) {
+         for (int i = 0; (e = array[p]) == null; i++) {
+             if (i < 100) {
+                 Thread.yield();
+                 continue;
+             }
+             takingWaiterCount.incrementAndGet();
              synchronized (this) {
                  this.wait();
              }
+             takingWaiterCount.decrementAndGet();
          }
          array[p] = null;
-         if (totalSize.get() == M) {
+         if (puttingWaiterCount.get() > 0) {
              synchronized (this) {
-                 this.notifyAll();
+                 this.notify();
              }
          }
          return e;
