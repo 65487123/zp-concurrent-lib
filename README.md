@@ -30,7 +30,9 @@
 
 [DependenNoLocBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenNoLocBlocQue.md)
 
-[DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenOneTOneBlocQue.md)    
+[DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenOneTOneBlocQue.md)
+
+[NoSideEffectNolockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoSideEffectNolockQueue.md) 
 ## com.lzp.util.concurrent.latch
 [CountDownLatch.java](https://github.com/65487123/zp-concurrent-lib/blob/master/CountDownLatch.md)
 ## com.lzp.util.concurrent.map
@@ -40,7 +42,9 @@
 #  任何场景性能稳定比JUC好并且无任何负作用的类(推荐使用)
     1、ThreadPoolExecutor.java(结合ListenableFuture.java使用):
     并行执行任务额外性能开销小，并且支持返回可添加回调的Future
-    2、CountDownLatch.java：
+    2、NoSideEffectNolockQueue.java：
+    高性能阻塞队列，无锁设计，性能比jdk中自带的高很多(不管是否开启JIT)且几乎无副作用(cpu时间片、高速缓存行浪费)
+    3、CountDownLatch.java：
     性能比juc包下的同名类高很多(不管是否开启JIT,实际开启JIT性能差距更大)
 #  特定场景推荐使用类
 其他
