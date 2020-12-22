@@ -20,8 +20,8 @@
  import java.util.concurrent.atomic.AtomicInteger;
 
  /**
-  * Description:高性能阻塞队列，适用于多个生产者对多个消费者（线程),无锁设计。
-  * 特点是几乎没什么副作用
+  * Description:高性能阻塞队列，适用于任意个数生产者对任意个数消费者（线程),无锁设计。
+  * 特点是几乎没什么副作用(cpu时间片、高速缓存行浪费)
   * @author: Lu ZePing
   * @date: 2020/7/20 12:19
   */
