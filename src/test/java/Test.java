@@ -41,6 +41,7 @@ public class Test {
             new Thread(() -> {
                 for (int i = 0; i < 10000; i++) {
                     try {
+
                         blockingQueue.put(String.valueOf(i));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -50,6 +51,7 @@ public class Test {
             new Thread(() -> {
                 for (int i = 0; i < 10000; i++) {
                     try {
+
                         blockingQueue.put(String.valueOf(i));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -59,6 +61,7 @@ public class Test {
             new Thread(() -> {
                 for (int i = 0; i < 10000; i++) {
                     try {
+
                         blockingQueue.put(String.valueOf(i));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -68,6 +71,7 @@ public class Test {
             new Thread(() -> {
                 for (int i = 0; i < 10000; i++) {
                     try {
+
                         blockingQueue.put(String.valueOf(i));
                     } catch (InterruptedException e) {
                         e.printStackTrace();

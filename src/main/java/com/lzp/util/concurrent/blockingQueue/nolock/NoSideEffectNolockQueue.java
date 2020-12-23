@@ -36,7 +36,7 @@
 
      //private final int DOUBLE_M;
 
-     //private  final AtomicInteger totalSize = new AtomicInteger();
+     private  final AtomicInteger totalSize = new AtomicInteger();
 
      private final AtomicInteger head = new AtomicInteger();
 
@@ -66,6 +66,10 @@
          if (obj == null) {
              throw new NullPointerException();
          }
+         while (totalSize.incrementAndGet()>M){
+             totalSize.decrementAndGet();
+             Thread.yield();
+         }
          int p = head.getAndIncrement() & M;
          for (int i = 0; array[p] != null; i++) {
              if (puttingWaiterCount.get() == 0 && i < 50) {
@@ -79,7 +83,6 @@
                  }
                  this.wait();
                  while (array[p] != null) {
-                     this.notify();
                      this.wait();
                  }
              }
@@ -87,17 +90,21 @@
              break;
          }
          array[p] = obj;
-         //if (takingWaiterCount.get() > 0) {
+         if (takingWaiterCount.get() > 0) {
              synchronized (this) {
-                 this.notify();
+                 this.notifyAll();
              }
-         //}
+         }
      }
 
 
      @Override
      public E take() throws InterruptedException {
          E e;
+         while (totalSize.decrementAndGet()<0){
+             totalSize.incrementAndGet();
+             Thread.yield();
+         }
          int p = tail.getAndIncrement() & M;
          for (int i = 0; (e = array[p]) == null; i++) {
              if (takingWaiterCount.get() == 0 && i < 50) {
@@ -111,7 +118,6 @@
                  }
                  this.wait();
                  while ((e = array[p]) == null) {
-                     this.notify();
                      this.wait();
                  }
              }
@@ -119,11 +125,11 @@
              break;
          }
          array[p] = null;
-         //if (puttingWaiterCount.get() > 0) {
+         if (puttingWaiterCount.get() > 0) {
              synchronized (this) {
-                 this.notify();
+                 this.notifyAll();
              }
-         //}
+         }
          return e;
      }
  }
