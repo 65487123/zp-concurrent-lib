@@ -23,67 +23,72 @@ public class Test {
 
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
-        BlockingQueue blockingQueue = new NoSideEffectNolockQueue(2);
-        CountDownLatch countDownLatch = new CountDownLatch(50000000);
+        //for (int j = 0; j < 100; j++) {
+            BlockingQueue blockingQueue = new NoSideEffectNolockQueue(5);
+            CountDownLatch countDownLatch = new CountDownLatch(50000);
 
-        long now = System.currentTimeMillis();
-        new Thread(() -> {
-            for (int i = 0; i <10000000 ; i++) {
-                try {
-                    blockingQueue.put(String.valueOf(i));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            long now = System.currentTimeMillis();
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+
+                    try {
+                        blockingQueue.put(String.valueOf(i));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i <10000000 ; i++) {
-                try {
-                    blockingQueue.put(String.valueOf(i));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            }).start();
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+                    try {
+                        blockingQueue.put(String.valueOf(i));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i <10000000 ; i++) {
-                try {
-                    blockingQueue.put(String.valueOf(i));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            }).start();
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+                    try {
+                        blockingQueue.put(String.valueOf(i));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i <10000000 ; i++) {
-                try {
-                    blockingQueue.put(String.valueOf(i));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            }).start();
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+                    try {
+                        blockingQueue.put(String.valueOf(i));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i <10000000 ; i++) {
-                try {
-                    blockingQueue.put(String.valueOf(i));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            }).start();
+            new Thread(() -> {
+                for (int i = 0; i < 10000; i++) {
+                    try {
+                        blockingQueue.put(String.valueOf(i));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        new Thread(() -> {
-            for (int i = 0; i <50000000 ; i++) {
-                try {
-                    blockingQueue.take();
-                    countDownLatch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            }).start();
+            Thread.sleep(1000);
+            new Thread(() -> {
+                for (int i = 0; i < 50000; i++) {
+                    try {
+                        blockingQueue.take();
+                        countDownLatch.countDown();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-        countDownLatch.await();
-        System.out.println(System.currentTimeMillis() - now);
+            }).start();
+            countDownLatch.await();
+            System.out.println(System.currentTimeMillis() - now);
+
+        //}
         /*BlockingQueue<Runnable> blockingQueue = new DelayQueue();
         System.out.println(System.currentTimeMillis());
         blockingQueue.put(new ScheduledFutureImp(new Runnable() {

@@ -47,13 +47,13 @@
      private final AtomicInteger takingWaiterCount = new AtomicInteger();
 
      public NoSideEffectNolockQueue(int preferCapacity) {
-         int minCapacity = 1048576;
+         //int minCapacity = 1048576;
          if (preferCapacity <= 0) {
              throw new IllegalArgumentException();
-         } else if (preferCapacity < minCapacity) {
+         } /*else if (preferCapacity < minCapacity) {
              array = (E[]) new Object[minCapacity];
              M = minCapacity - 1;
-         } else {
+         } */else {
              int capacity = tableSizeFor(preferCapacity);
              array = (E[]) new Object[capacity];
              M = capacity - 1;
@@ -74,6 +74,9 @@
              }
              puttingWaiterCount.incrementAndGet();
              synchronized (this) {
+                 if (array[p] == null) {
+                     break;
+                 }
                  this.wait();
                  while (array[p] != null) {
                      this.notify();
@@ -84,11 +87,11 @@
              break;
          }
          array[p] = obj;
-         if (takingWaiterCount.get() > 0) {
+         //if (takingWaiterCount.get() > 0) {
              synchronized (this) {
                  this.notify();
              }
-         }
+         //}
      }
 
 
@@ -103,6 +106,9 @@
              }
              takingWaiterCount.incrementAndGet();
              synchronized (this) {
+                 if ((e = array[p]) != null){
+                     break;
+                 }
                  this.wait();
                  while ((e = array[p]) == null) {
                      this.notify();
@@ -113,11 +119,11 @@
              break;
          }
          array[p] = null;
-         if (puttingWaiterCount.get() > 0) {
+         //if (puttingWaiterCount.get() > 0) {
              synchronized (this) {
                  this.notify();
              }
-         }
+         //}
          return e;
      }
  }
