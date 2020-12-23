@@ -77,13 +77,13 @@
                  continue;
              }
              puttingWaiterCount.incrementAndGet();
-             synchronized (this) {
+             synchronized (head) {
                  if (array[p] == null) {
                      break;
                  }
                  this.wait();
                  while (array[p] != null) {
-                     this.wait();
+                     head.wait();
                  }
              }
              puttingWaiterCount.decrementAndGet();
@@ -101,7 +101,7 @@
      @Override
      public E take() throws InterruptedException {
          E e;
-         while (totalSize.decrementAndGet()<0){
+         while (totalSize.decrementAndGet()<-M){
              totalSize.incrementAndGet();
              Thread.yield();
          }
@@ -126,7 +126,7 @@
          }
          array[p] = null;
          if (puttingWaiterCount.get() > 0) {
-             synchronized (this) {
+             synchronized (head) {
                  this.notifyAll();
              }
          }
