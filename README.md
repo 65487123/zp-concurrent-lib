@@ -32,7 +32,7 @@
 
 [DependenOneTOneBlocQue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DependenOneTOneBlocQue.md)
 
-[NoSideEffectNolockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoSideEffectNolockQueue.md) 
+[NoSideEffectNolockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoSideEffectLocklessQueue.md) 
 ## com.lzp.util.concurrent.latch
 [CountDownLatch.java](https://github.com/65487123/zp-concurrent-lib/blob/master/CountDownLatch.md)
 ## com.lzp.util.concurrent.map
