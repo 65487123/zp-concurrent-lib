@@ -125,6 +125,9 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         }
         while (items[putIndex] != null) {
             synchronized (putWatingLock) {
+                if (items[putIndex] == null){
+                    break;
+                }
                 putThreadsIsWaiting = true;
                 putWatingLock.wait();
             }
@@ -141,6 +144,9 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         long deadline = System.currentTimeMillis() + remainingTime;
         while (items[putIndex] != null && remainingTime > 0) {
             synchronized (putWatingLock) {
+                if (items[putIndex] == null){
+                    break;
+                }
                 putThreadsIsWaiting = true;
                 putWatingLock.wait(remainingTime);
                 remainingTime = deadline - System.currentTimeMillis();
@@ -160,6 +166,9 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
             E e;
             while ((e = (E) items[takeIndex]) == null) {
                 synchronized (takeWatingLock) {
+                    if ((e = (E) items[takeIndex]) != null) {
+                        break;
+                    }
                     takeThreadsIsWaiting = true;
                     takeWatingLock.wait();
                 }
@@ -177,6 +186,9 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
             E e;
             while ((e = (E) items[takeIndex]) == null && remainingTime > 0) {
                 synchronized (takeWatingLock) {
+                    if ((e = (E) items[takeIndex]) != null) {
+                        break;
+                    }
                     takeThreadsIsWaiting = true;
                     takeWatingLock.wait(remainingTime);
                     remainingTime = deadline - System.currentTimeMillis();
