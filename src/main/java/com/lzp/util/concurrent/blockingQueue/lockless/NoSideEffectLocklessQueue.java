@@ -85,7 +85,7 @@
                  if (array[p] == null) {
                      break;
                  }
-                 this.wait();
+                 head.wait();
                  while (array[p] != null) {
                      head.wait();
                  }
@@ -134,7 +134,7 @@
          array[p] = null;
          if (puttingWaiterCount.get() > 0) {
              synchronized (head) {
-                 this.notifyAll();
+                 head.notifyAll();
              }
          }
          return e;

@@ -1,5 +1,6 @@
 import com.lzp.util.concurrent.blockingQueue.lockless.NoSideEffectLocklessQueue;
 import com.lzp.util.concurrent.blockingQueue.lockless.OneToOneBlockingQueue;
+import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.latch.CountDownLatch;
 
 import java.io.*;
@@ -19,13 +20,13 @@ public class Test {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
         int sum = 0;
-        for (int j = 0; j < 100; j++) {
-            BlockingQueue blockingQueue = new NoSideEffectLocklessQueue(65536);
-            CountDownLatch countDownLatch = new CountDownLatch(5000000);
+        for (int j = 0; j < 50; j++) {
+            BlockingQueue blockingQueue = new OptimizedArrBlockQueue(16384);
+            CountDownLatch countDownLatch = new CountDownLatch(50000);
 
             long now = System.currentTimeMillis();
             new Thread(() -> {
-                for (int i = 0; i < 1000000; i++) {
+                for (int i = 0; i < 10000; i++) {
 
                     try {
                         blockingQueue.put(String.valueOf(i));
@@ -35,7 +36,7 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                for (int i = 0; i < 1000000; i++) {
+                for (int i = 0; i < 10000; i++) {
                     try {
 
                         blockingQueue.put(String.valueOf(i));
@@ -45,7 +46,7 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                for (int i = 0; i < 1000000; i++) {
+                for (int i = 0; i < 10000; i++) {
                     try {
 
                         blockingQueue.put(String.valueOf(i));
@@ -55,7 +56,7 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                for (int i = 0; i < 1000000; i++) {
+                for (int i = 0; i < 10000; i++) {
                     try {
 
                         blockingQueue.put(String.valueOf(i));
@@ -65,7 +66,7 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                for (int i = 0; i < 1000000; i++) {
+                for (int i = 0; i < 10000; i++) {
                     try {
 
                         blockingQueue.put(String.valueOf(i));
@@ -75,7 +76,7 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                for (int i = 0; i < 5000000; i++) {
+                for (int i = 0; i < 50000; i++) {
                     try {
                         blockingQueue.take();
                         countDownLatch.countDown();
@@ -87,7 +88,8 @@ public class Test {
             countDownLatch.await();
             sum += System.currentTimeMillis() - now;
         }
-        System.out.println(new BigDecimal(sum).divide(new BigDecimal(100)));
+
+        System.out.println(new BigDecimal(sum).divide(new BigDecimal(50),3,BigDecimal.ROUND_CEILING));
         /*BlockingQueue<Runnable> blockingQueue = new DelayQueue();
         System.out.println(System.currentTimeMillis());
         blockingQueue.put(new ScheduledFutureImp(new Runnable() {
