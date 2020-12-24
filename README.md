@@ -23,7 +23,7 @@
 [OptimizedArrBlockQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OptimizedArrBlockQueue.md)
 
 [DelayQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/DelayQueue.md)
-## com.lzp.util.concurrent.blockingQueue.nolock
+## com.lzp.util.concurrent.blockingQueue.lockless
 [NoLockBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/NoLockBlockingQueue.md)
 
 [OneToOneBlockingQueue.java](https://github.com/65487123/zp-concurrent-lib/blob/master/OneToOneBlockingQueue.md)

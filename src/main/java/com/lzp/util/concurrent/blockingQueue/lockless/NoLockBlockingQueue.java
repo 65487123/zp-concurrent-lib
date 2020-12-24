@@ -13,24 +13,21 @@
   *  limitations under the License.
   */
 
-package com.lzp.util.concurrent.blockingQueue.nolock;
-
-
-import java.util.concurrent.TimeUnit;
+package com.lzp.util.concurrent.blockingQueue.lockless;
 
 
 /**
- * Description:高性能阻塞队列，适用于一个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
+ * Description:高性能阻塞队列，适用于多个生产者对一个消费者（线程),无锁设计，并且解决了伪共享问题。
+ * 使用方法：消费者线程必须得设置为2的次方
  *
- * 和 {@link DependenOneTOneBlocQue}适用场景的区别：
+ * 和 {@link DependenNoLocBlocQue}适用场景的区别：
  * 这个队列适用于生产者生产消息与消费者消费消息无依赖关系
- * 也就是说，生产者生产的前一个消息不管有没有被消费，都会生产下一个消息
+ * 也就是说，一个生产者生产的前一个消息不管有没有被消费，都会生产下一个消息
  *
  * @author: Lu ZePing
  * @date: 2019/7/20 12:19
  */
-public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
-
+public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
     /**
      * 指针压缩后4字节
      *
@@ -46,75 +43,59 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
      *
      * 由于每部份数组块只被同一个线程操作，所以写数据的时候也不需要进行cas（不可能会出现两个写线程
      * 同时在等一个位置被释放）
-     *
      */
-    private E[] array;
+    private E[][] array;
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
     private final int m;
 
-    private int[] head = new int[27];
+    private long padding1, padding2, padding3, padding4, padding5;
+    private int padding6;
 
-    private int[] tail = new int[16];
+    private int[] head;
+    private int[] tail;
 
 
-    public OneToOneBlockingQueue(int preferCapacity) {
+    public NoLockBlockingQueue(int preferCapacity, int threadSum) {
         int capacity = tableSizeFor(preferCapacity);
-        array = (E[]) new Object[capacity];
-        m = capacity - 1;
-    }
-
-    public OneToOneBlockingQueue() {
-        int capacity = tableSizeFor(100000);
-        array = (E[]) new Object[capacity];
-        m = capacity - 1;
+        int capacityPerSlot = capacity / threadSum;
+        array = (E[][]) new Object[threadSum][capacityPerSlot];
+        //int占4个字节
+        head = new int[16 * threadSum];
+        tail = new int[16 * threadSum];
+        m = capacityPerSlot - 1;
     }
 
     @Override
-    public void put(E obj) throws InterruptedException {
-        if (obj == null){
+    public void put(E obj, int threadId) throws InterruptedException {
+        if (obj==null){
             throw new NullPointerException();
         }
-        int p = head[11]++ & m;
-        while (array[p] != null) {
+        int p = head[16 * threadId]++ & m;
+        while (array[threadId][p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
             Thread.sleep(1);
         }
-        array[p] = obj;
+        array[threadId][p] = obj;
     }
 
 
     @Override
     public E take() throws InterruptedException {
-        E e;
-        int p = tail[0]++ & m;
-        while ((e = array[p]) == null) {
+        E r;
+        while (true) {
+            for (int i = 0; i < tail.length; i += 16) {
+                int p = tail[i] & this.m;
+                if ((r = array[i / 16][p]) != null) {
+                    array[i / 16][p] = null;
+                    tail[i]++;
+                    return r;
+                }
+            }
             //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
             Thread.sleep(1);
         }
-        array[p] = null;
-        return  e;
     }
 
-    @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        long now = 0;
-        long time = unit.toMillis(timeout);
-        E e;
-        int p = tail[0]++ & m;
-        while ((e = array[p]) == null) {
-            if (now == 0) {
-                now = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() - now > time) {
-                tail[0]--;
-                throw new InterruptedException();
-            } else {
-                //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
-                Thread.sleep(1);
-            }
-        }
-        array[p] = null;
-        return e;
-    }
 }

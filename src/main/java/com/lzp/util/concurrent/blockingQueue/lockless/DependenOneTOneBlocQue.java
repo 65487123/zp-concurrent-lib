@@ -13,7 +13,7 @@
   *  limitations under the License.
   */
 
-package com.lzp.util.concurrent.blockingQueue.nolock;
+package com.lzp.util.concurrent.blockingQueue.lockless;
 
 
 import java.util.concurrent.TimeUnit;
