@@ -20,8 +20,8 @@ public class Test {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
         int sum = 0;
-        for (int j = 0; j < 50; j++) {
-            BlockingQueue blockingQueue = new OptimizedArrBlockQueue(16384);
+        for (int j = 0; j < 2000; j++) {
+            BlockingQueue blockingQueue = new NoSideEffectLocklessQueue(  16384);
             CountDownLatch countDownLatch = new CountDownLatch(50000);
 
             long now = System.currentTimeMillis();
@@ -89,7 +89,7 @@ public class Test {
             sum += System.currentTimeMillis() - now;
         }
 
-        System.out.println(new BigDecimal(sum).divide(new BigDecimal(50),3,BigDecimal.ROUND_CEILING));
+        System.out.println(new BigDecimal(sum).divide(new BigDecimal(2000),3,BigDecimal.ROUND_CEILING));
         /*BlockingQueue<Runnable> blockingQueue = new DelayQueue();
         System.out.println(System.currentTimeMillis());
         blockingQueue.put(new ScheduledFutureImp(new Runnable() {

@@ -32,16 +32,15 @@
 
      private final int M;
 
-
      private final AtomicInteger totalSize = new AtomicInteger();
 
      private final AtomicInteger head = new AtomicInteger();
 
      private final AtomicInteger tail = new AtomicInteger();
 
-     private final AtomicInteger puttingWaiterCount = new AtomicInteger();
+     private volatile boolean hasPuttingWaiter;
 
-     private final AtomicInteger takingWaiterCount = new AtomicInteger();
+     private volatile boolean hasTakingWaiter;
 
      public NoSideEffectLocklessQueue(int preferCapacity) {
          int minCapacity = 64;
@@ -74,30 +73,34 @@
              Thread.yield();
          }
          int p = head.getAndIncrement() & M;
-         for (int i = 0; array[p] != null; i++) {
-             //如果已经有put线程在阻塞等待了，说明取元素并不频繁，自旋没意义
-             if (puttingWaiterCount.get() == 0 && i < 50) {
-                 Thread.yield();
-                 continue;
-             }
-             puttingWaiterCount.incrementAndGet();
-             synchronized (head) {
-                 if (array[p] == null) {
-                     break;
+         if (array[p] != null) {
+             Thread.yield();
+             for (int i = 0; array[p] != null; i++) {
+                 //如果已经有put线程在阻塞等待了，说明取元素并不频繁，自旋没意义
+                 if (!hasPuttingWaiter && i < 50) {
+                     Thread.yield();
+                     continue;
                  }
-                 head.wait();
-                 while (array[p] != null) {
+                 synchronized (head) {
+                     hasPuttingWaiter = true;
+                     if (array[p] == null) {
+                         break;
+                     }
                      head.wait();
+                     while (array[p] != null) {
+                         hasPuttingWaiter = true;
+                         head.wait();
+                     }
                  }
+                 break;
              }
-             puttingWaiterCount.decrementAndGet();
-             break;
          }
          array[p] = obj;
-         if (takingWaiterCount.get() > 0) {
+         if (hasTakingWaiter) {
              //如果有取元素的线程在阻塞等待，则notify
              synchronized (this) {
                  this.notifyAll();
+                 hasTakingWaiter = false;
              }
          }
      }
@@ -112,29 +115,33 @@
              Thread.yield();
          }
          int p = tail.getAndIncrement() & M;
-         for (int i = 0; (e = array[p]) == null; i++) {
-             //如果已经有take线程在阻塞等待了，说明取元素并不频繁，自旋没意义
-             if (takingWaiterCount.get() == 0 && i < 50) {
-                 Thread.yield();
-                 continue;
-             }
-             takingWaiterCount.incrementAndGet();
-             synchronized (this) {
-                 if ((e = array[p]) != null) {
-                     break;
+         if ((e = array[p]) == null) {
+             Thread.yield();
+             for (int i = 0; (e = array[p]) == null; i++) {
+                 //如果已经有take线程在阻塞等待了，说明取元素并不频繁，自旋没意义
+                 if (!hasTakingWaiter && i < 50) {
+                     Thread.yield();
+                     continue;
                  }
-                 this.wait();
-                 while ((e = array[p]) == null) {
+                 synchronized (this) {
+                     hasTakingWaiter = true;
+                     if ((e = array[p]) != null) {
+                         break;
+                     }
                      this.wait();
+                     while ((e = array[p]) == null) {
+                         hasTakingWaiter = true;
+                         this.wait();
+                     }
                  }
+                 break;
              }
-             takingWaiterCount.decrementAndGet();
-             break;
          }
          array[p] = null;
-         if (puttingWaiterCount.get() > 0) {
+         if (hasPuttingWaiter) {
              synchronized (head) {
                  head.notifyAll();
+                 hasPuttingWaiter = false;
              }
          }
          return e;
