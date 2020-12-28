@@ -77,7 +77,7 @@
              Thread.yield();
              for (int i = 0; array[p] != null; i++) {
                  //如果已经有put线程在阻塞等待了，说明取元素并不频繁，自旋没意义
-                 if (!hasPuttingWaiter && i < 50) {
+                 if (!hasPuttingWaiter && i < 100) {
                      Thread.yield();
                      continue;
                  }
@@ -115,7 +115,7 @@
              Thread.yield();
              for (int i = 0; (e = array[p]) == null; i++) {
                  //如果已经有take线程在阻塞等待了，说明取元素并不频繁，自旋没意义
-                 if (!hasTakingWaiter && i < 50) {
+                 if (!hasTakingWaiter && i < 100) {
                      Thread.yield();
                      continue;
                  }
