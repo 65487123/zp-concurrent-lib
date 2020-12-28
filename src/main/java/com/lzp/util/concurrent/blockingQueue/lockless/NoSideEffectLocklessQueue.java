@@ -87,12 +87,8 @@
                          break;
                      }
                      head.wait();
-                     while (array[p] != null) {
-                         hasPuttingWaiter = true;
-                         head.wait();
-                     }
+                     i = 0;
                  }
-                 break;
              }
          }
          array[p] = obj;
@@ -129,12 +125,8 @@
                          break;
                      }
                      this.wait();
-                     while ((e = array[p]) == null) {
-                         hasTakingWaiter = true;
-                         this.wait();
-                     }
+                     i = 0;
                  }
-                 break;
              }
          }
          array[p] = null;
