@@ -68,7 +68,7 @@
              throw new NullPointerException();
          }
          //如果头指针已经倒追尾指针了，就自旋，防止两个或以上的线程数量同时等待同一个索引位置。直到有位置释放出来
-         while (totalSize.incrementAndGet() > M) {
+         while (totalSize.getAndIncrement() >= M) {
              totalSize.decrementAndGet();
              Thread.yield();
          }
@@ -92,9 +92,9 @@
              }
          }
          array[p] = obj;
-         if (hasTakingWaiter) {
+         synchronized (this) {
              //如果有取元素的线程在阻塞等待，则notify
-             synchronized (this) {
+             if (hasTakingWaiter) {
                  this.notifyAll();
                  hasTakingWaiter = false;
              }
@@ -106,7 +106,7 @@
      public E take() throws InterruptedException {
          E e;
          //如果尾指针已经倒追头指针了，就自旋，防止两个或以上的线程数量同时等待同一个索引位置。直到有位置释放出来
-         while (totalSize.decrementAndGet() < -M) {
+         while (totalSize.getAndDecrement() <= -M) {
              totalSize.incrementAndGet();
              Thread.yield();
          }
@@ -130,8 +130,8 @@
              }
          }
          array[p] = null;
-         if (hasPuttingWaiter) {
-             synchronized (head) {
+         synchronized (head) {
+             if (hasPuttingWaiter) {
                  head.notifyAll();
                  hasPuttingWaiter = false;
              }

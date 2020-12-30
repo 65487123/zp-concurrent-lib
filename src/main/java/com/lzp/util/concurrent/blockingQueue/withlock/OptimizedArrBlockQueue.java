@@ -21,8 +21,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
+ /**
  * Description:
  * 相比{@link java.util.concurrent.ArrayBlockingQueue}优势
  * 性能高：
@@ -81,7 +82,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
     /**
      * 存元素的容器，并且作为读锁。
      */
-    private final Object[] items;
+    private transient final Object[] items;
 
     private int takeIndex;
 
@@ -94,6 +95,8 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
     private final Object putWatingLock = new Object();
 
     private final Object takeWatingLock = new Object();
+
+    private final AtomicInteger size = new AtomicInteger();
 
     public OptimizedArrBlockQueue(int capacity) {
         this.items = new Object[capacity];
@@ -128,7 +131,6 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                 if (items[putIndex] == null){
                     break;
                 }
-                putThreadsIsWaiting = true;
                 putWatingLock.wait();
             }
         }
@@ -169,7 +171,6 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                     if ((e = (E) items[takeIndex]) != null) {
                         break;
                     }
-                    takeThreadsIsWaiting = true;
                     takeWatingLock.wait();
                 }
             }
@@ -255,29 +256,27 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         throw new UnsupportedOperationException();
     }
 
-    private void enqueue(E e) {
-        items[putIndex++] = e;
-        synchronized (takeWatingLock) {
-            if (takeThreadsIsWaiting) {
-                takeThreadsIsWaiting = false;
-                takeWatingLock.notify();
-            }
-        }
-        if (putIndex == items.length) {
+     private void enqueue(E e) {
+         items[putIndex++] = e;
+         if (size.getAndIncrement() == 0) {
+             synchronized (takeWatingLock) {
+                 takeWatingLock.notify();
+             }
+         }
+         if (putIndex == items.length) {
             putIndex = 0;
-        }
-    }
+         }
+     }
 
-    private void dequeue() {
-        items[takeIndex++] = null;
-        synchronized (putWatingLock) {
-            if (putThreadsIsWaiting) {
-                putThreadsIsWaiting = false;
-                putWatingLock.notify();
-            }
-        }
-        if (takeIndex == items.length) {
-            takeIndex = 0;
+     private void dequeue() {
+         items[takeIndex++] = null;
+         if (size.getAndDecrement() == items.length) {
+             synchronized (putWatingLock) {
+                 putWatingLock.notify();
+             }
+         }
+         if (takeIndex == items.length) {
+             takeIndex = 0;
         }
     }
 }
