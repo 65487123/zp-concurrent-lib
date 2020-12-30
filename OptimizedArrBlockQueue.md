@@ -21,16 +21,12 @@
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oao2.png)
 ### 四个生产线程对一个消费线程
 #### ArrayBlockingQueue
-![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arr.png)
-![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arr1.png)
 ![arr](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/arr2.png)
 #### 这个队列
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oa.png)
-![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oa1.png)
 ![mine](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/oa2.png)
 #### 测试总结
     关闭JIT、内存足够的情况下，一个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的2倍
-    左右，四个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的6倍以上。(主机不同，结果也
+    左右，四个生产者对一个消费者，这个队列性能是ArrayBlockingQueue的7倍以上。(主机不同，结果也
     不同，实际我用另一台cpu主频比较高的主机，测试结果是将近十倍的差距）
     生产者消费者线程数量越多，性能差距越大
     注：开启JIT的情况下，在主方法写多线程放取测试代码，ArrayBlockingQueue是比这个队列要快的，
