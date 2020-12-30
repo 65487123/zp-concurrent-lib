@@ -88,10 +88,6 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
 
     private int putIndex;
 
-    private boolean putThreadsIsWaiting;
-
-    private boolean takeThreadsIsWaiting;
-
     private final Object putWatingLock = new Object();
 
     private final Object takeWatingLock = new Object();
@@ -126,6 +122,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         if (e == null) {
             throw new NullPointerException();
         }
+        Object[] items = this.items;
         while (items[putIndex] != null) {
             synchronized (putWatingLock) {
                 if (items[putIndex] == null){
@@ -134,7 +131,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                 putWatingLock.wait();
             }
         }
-        enqueue(e);
+        enqueue(e,items);
     }
 
     @Override
@@ -149,21 +146,20 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                 if (items[putIndex] == null){
                     break;
                 }
-                putThreadsIsWaiting = true;
                 putWatingLock.wait(remainingTime);
                 remainingTime = deadline - System.currentTimeMillis();
             }
         }
         if (items[putIndex] != null) {
-            putThreadsIsWaiting = false;
             return false;
         }
-        enqueue(e);
+        enqueue(e,items);
         return true;
     }
 
     @Override
     public E take() throws InterruptedException {
+        Object[] items = this.items;
         synchronized (items) {
             E e;
             while ((e = (E) items[takeIndex]) == null) {
@@ -174,7 +170,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                     takeWatingLock.wait();
                 }
             }
-            dequeue();
+            dequeue(items);
             return e;
         }
     }
@@ -190,7 +186,6 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
                     if ((e = (E) items[takeIndex]) != null) {
                         break;
                     }
-                    takeThreadsIsWaiting = true;
                     takeWatingLock.wait(remainingTime);
                     remainingTime = deadline - System.currentTimeMillis();
                 }
@@ -198,7 +193,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
             if (e == null) {
                 return null;
             }
-            dequeue();
+            dequeue(items);
             return e;
         }
     }
@@ -235,7 +230,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         if (items[putIndex] != null) {
             return false;
         }
-        enqueue(e);
+        enqueue(e,items);
         return true;
     }
 
@@ -246,7 +241,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
             if ((e = (E) items[takeIndex]) == null) {
                 return null;
             }
-            dequeue();
+            dequeue(items);
             return e;
         }
     }
@@ -256,7 +251,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
         throw new UnsupportedOperationException();
     }
 
-     private void enqueue(E e) {
+     private void enqueue(E e,Object[] items) {
          items[putIndex++] = e;
          if (size.getAndIncrement() == 0) {
              synchronized (takeWatingLock) {
@@ -268,7 +263,7 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
          }
      }
 
-     private void dequeue() {
+     private void dequeue(Object[] items) {
          items[takeIndex++] = null;
          if (size.getAndDecrement() == items.length) {
              synchronized (putWatingLock) {
@@ -277,6 +272,6 @@ public class OptimizedArrBlockQueue<E> extends AbstractQueue<E>
          }
          if (takeIndex == items.length) {
              takeIndex = 0;
-        }
-    }
+         }
+     }
 }
