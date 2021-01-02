@@ -276,16 +276,16 @@ public class ThreadPoolExecutor implements ExecutorService {
                     rejectedExecutionHandler.rejectedExecution(command, this);
                 } else {
                     //没达到最大线程数,进行cas,然后看是否抢到创建额外线程的权利
-                    if (workerSum.incrementAndGet() > maxNum) {
+                    if (workerSum.getAndIncrement() >= maxNum) {
                         //没抢到,线程数量减回去
-                        workerSum.decrementAndGet();
+                        workerSum.getAndDecrement();
                         //执行拒绝策略前再入队一次，步成功就执行拒绝策略
                         if (!blockingQueue.offer(command)) {
                             rejectedExecutionHandler.rejectedExecution(command, this);
                         }
                     } else {
                         //抢到了创建额外线程权力
-                        if (workerSum.intValue() == maxNum) {
+                        if (workerSum.get() == maxNum) {
                             this.additionThreadMax = true;
                         }
                         synchronized (workerList) {
@@ -298,20 +298,20 @@ public class ThreadPoolExecutor implements ExecutorService {
             }
         } else {
             //线程数量没达到核心线程数，争抢创建核心线程机会
-            if (workerSum.incrementAndGet() > coreNum) {
+            if (workerSum.getAndIncrement() >= coreNum) {
                 //没抢到创建核心线程机会，入队
                 if (blockingQueue.offer(command)) {
-                    workerSum.decrementAndGet();
+                    workerSum.getAndDecrement();
                 } else {
                     //发现队列已满，查看是否抢到创建额外线程机会
-                    if (workerSum.intValue() <= maxNum) {
+                    if (workerSum.get() <= maxNum) {
                         synchronized (workerList) {
                             if (!shutdown) {
                                 workerList.add(new Worker(command, true));
                             }
                         }
                     } else {
-                        workerSum.decrementAndGet();
+                        workerSum.getAndDecrement();
                         rejectedExecutionHandler.rejectedExecution(command, this);
                     }
                 }
