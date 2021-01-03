@@ -19,10 +19,7 @@ package com.lzp.util.concurrent.lock;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Constructor;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -44,7 +41,7 @@ public class NoBlocKReentrantLock implements Lock {
 
     private volatile long threadId = -1;
     private final AtomicInteger entrCount = new AtomicInteger();
-    private final Set<Thread> waitSet = new TreeSet<>();
+    private final Set<Thread> waitSet = new HashSet<>();
 
 
     class ConditionImp implements Condition{

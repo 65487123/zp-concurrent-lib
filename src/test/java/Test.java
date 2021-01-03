@@ -19,7 +19,7 @@ import java.util.concurrent.*;
  */
 public class Test {
     static void a() throws InterruptedException {
-            BlockingQueue blockingQueue = new OptimizedArrBlockQueue(500000);
+            BlockingQueue blockingQueue = new ArrayBlockingQueue(5000000);
             //ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(4, 4, 0, blockingQueue, (r, executor) -> r.run());
             CountDownLatch countDownLatch = new CountDownLatch(5000000);
             Runnable runnable = () -> countDownLatch.countDown();
@@ -27,7 +27,7 @@ public class Test {
 
             new Thread(() -> {
                 try {
-                    for (int i = 0; i < 1250000; i++) {
+                    for (int i = 0; i < 5000000; i++) {
                         blockingQueue.take();
                         countDownLatch.countDown();
                     }
@@ -36,69 +36,23 @@ public class Test {
                 }
             }).start();
             new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.take();
-                        countDownLatch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < 1250000; i++) {
+                    blockingQueue.offer(runnable);
                 }
             }).start();
             new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.take();
-                        countDownLatch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < 1250000; i++) {
+                    blockingQueue.offer(runnable);
                 }
             }).start();
             new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.take();
-                        countDownLatch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < 1250000; i++) {
+                    blockingQueue.offer(runnable);
                 }
             }).start();
             new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.put(runnable);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-            new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.put(runnable);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-            new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.put(runnable);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-            new Thread(() -> {
-                try {
-                    for (int i = 0; i < 1250000; i++) {
-                        blockingQueue.put(runnable);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < 1250000; i++) {
+                    blockingQueue.offer(runnable);
                 }
             }).start();
             countDownLatch.await();

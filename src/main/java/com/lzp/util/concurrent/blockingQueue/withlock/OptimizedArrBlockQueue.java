@@ -22,6 +22,7 @@
  import java.util.concurrent.BlockingQueue;
  import java.util.concurrent.TimeUnit;
  import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.concurrent.locks.LockSupport;
 
  /**
   * Description:
@@ -122,16 +123,15 @@
          }
          Object[] items = this.items;
          //这个操作能保证元素放取的可见性
-         if (size.get() == items.length) {
-             //有自旋一次的意思
-             Thread.yield();
-             while (items[putIndex] != null) {
-                 synchronized (putWatingLock) {
-                     if (items[putIndex] == null) {
-                         break;
-                     }
-                     putWatingLock.wait();
+         while (size.get() == items.length) {
+             if (putSpinSucceed()) {
+                 break;
+             }
+             synchronized (putWatingLock) {
+                 if (size.get() != items.length) {
+                     break;
                  }
+                 putWatingLock.wait();
              }
          }
          enqueue(e, items);
@@ -142,22 +142,43 @@
          if (e == null) {
              throw new NullPointerException();
          }
+         Object[] items = this.items;
          long remainingTime = unit.toMillis(timeout);
-         long deadline = System.currentTimeMillis() + remainingTime;
-         while (items[putIndex] != null && remainingTime > 0) {
+         while (size.get() == items.length) {
+             if (remainingTime<0){
+                 return false;
+             }
+             if (putSpinSucceed()) {
+                 break;
+             }
              synchronized (putWatingLock) {
-                 if (items[putIndex] == null) {
+                 if (size.get() != items.length) {
                      break;
                  }
+                 long deadline = System.currentTimeMillis() + remainingTime;
                  putWatingLock.wait(remainingTime);
-                 remainingTime = deadline - System.currentTimeMillis();
+                 if (size.get() != items.length) {
+                     break;
+                 } else {
+                     remainingTime = deadline - System.currentTimeMillis();
+                 }
              }
-         }
-         if (items[putIndex] != null) {
-             return false;
          }
          enqueue(e, items);
          return true;
+     }
+
+
+     private boolean putSpinSucceed(){
+         boolean notFull = false;
+         for (int i = 0; i < 10; i++) {
+             if (size.get() != items.length) {
+                 notFull = true;
+                 break;
+             }
+             Thread.yield();
+         }
+         return notFull;
      }
 
      @Override
@@ -166,43 +187,60 @@
          synchronized (items) {
              E e;
              //这个操作能保证元素放取的可见性
-             if (size.get() == 0) {
-                 //有自旋一次的意思
-                 Thread.yield();
-                 while ((e = (E) items[takeIndex]) == null) {
-                     synchronized (takeWatingLock) {
-                         if ((e = (E) items[takeIndex]) != null) {
-                             break;
-                         }
-                         takeWatingLock.wait();
-                     }
+             while (size.get() == 0) {
+                 if (takeSpinSucceed()){
+                     break;
                  }
-             } else {
-                 e = (E) items[takeIndex];
+                 synchronized (takeWatingLock) {
+                     if (size.get() != 0) {
+                         break;
+                     }
+                     takeWatingLock.wait();
+                 }
              }
+             e = (E) items[takeIndex];
              dequeue(items);
              return e;
          }
+     }
+
+     private boolean takeSpinSucceed(){
+         boolean notEmpty = false;
+         for (int i = 0; i <10 ; i++) {
+             if (size.get() != 0) {
+                 notEmpty  = true;
+                 break;
+             }
+             Thread.yield();
+         }
+         return notEmpty;
      }
 
      @Override
      public E poll(long timeout, TimeUnit unit) throws InterruptedException {
          synchronized (items) {
              long remainingTime = unit.toMillis(timeout);
-             long deadline = System.currentTimeMillis() + remainingTime;
-             E e;
-             while ((e = (E) items[takeIndex]) == null && remainingTime > 0) {
+             while (size.get() == 0) {
+                 if (remainingTime < 0) {
+                     return null;
+                 }
+                 if (takeSpinSucceed()){
+                     break;
+                 }
                  synchronized (takeWatingLock) {
-                     if ((e = (E) items[takeIndex]) != null) {
+                     if (size.get() != 0) {
                          break;
                      }
+                     long deadline = System.currentTimeMillis() + remainingTime;
                      takeWatingLock.wait(remainingTime);
-                     remainingTime = deadline - System.currentTimeMillis();
+                     if (size.get() != 0) {
+                         break;
+                     } else {
+                         remainingTime = deadline - System.currentTimeMillis();
+                     }
                  }
              }
-             if (e == null) {
-                 return null;
-             }
+             E e = (E) items[takeIndex];
              dequeue(items);
              return e;
          }
@@ -237,7 +275,7 @@
          if (e == null) {
              throw new NullPointerException();
          }
-         if (items[putIndex] != null) {
+         if (size.get() == items.length) {
              return false;
          }
          enqueue(e, items);
