@@ -44,9 +44,6 @@
     并行执行任务额外性能开销小，并且支持返回可添加回调的Future
     2、CountDownLatch.java：
     性能比juc包下的同名类高很多(不管是否开启JIT,实际开启JIT性能差距更大)
-    3、OptimizedArrBlockQueue.java
-    性能比juc.ArrayBlockingQueue和LinkedBlockingQueue好，适合任意生产
-    线程对任意消费线程，并且无资源浪费(内存占用、cpu缓存行、cpu时间片等)。
     
 #  特定场景推荐使用类
 其他
