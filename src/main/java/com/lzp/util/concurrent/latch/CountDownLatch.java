@@ -129,10 +129,8 @@ import java.util.concurrent.atomic.AtomicInteger;
              long remainingTime = unit.toMillis(timeout);
              long deadline = System.currentTimeMillis() + remainingTime;
              while (!reachZero && remainingTime > 0) {
-                 synchronized (this) {
-                     this.wait(remainingTime);
-                     remainingTime = deadline - System.currentTimeMillis();
-                 }
+                 this.wait(remainingTime);
+                 remainingTime = deadline - System.currentTimeMillis();
              }
          }
          return reachZero;
