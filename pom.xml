@@ -7,6 +7,18 @@
     <groupId>com.lzp</groupId>
     <artifactId>zp-concurrent-lib</artifactId>
     <version>1.0</version>
+    <developers>
+        <developer>
+            <name>luzeping</name>
+            <email>zeping_lu@163.com</email>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
     <build>
         <plugins>
             <plugin>
