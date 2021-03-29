@@ -19,13 +19,19 @@ import java.util.concurrent.*;
  */
 public class Test {
     static void a() throws InterruptedException {
-            BlockingQueue blockingQueue = new ArrayBlockingQueue(5000000);
-            //ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(4, 4, 0, blockingQueue, (r, executor) -> r.run());
-            CountDownLatch countDownLatch = new CountDownLatch(5000000);
-            Runnable runnable = () -> countDownLatch.countDown();
-            long now = System.currentTimeMillis();
+            BlockingQueue blockingQueue = new ArrayBlockingQueue(500000);
+            com.lzp.util.concurrent.threadpool.ThreadPoolExecutor threadPoolExecutor = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(4, 4, 0, blockingQueue, (r, executor) -> r.run());
+            //java.util.concurrent.ThreadPoolExecutor threadPoolExecutor = new java.util.concurrent.ThreadPoolExecutor(4, 4, 0,TimeUnit.SECONDS, blockingQueue, (r, executor) -> r.run());
+        for (int j = 0; j < 10; j++) {
 
-            new Thread(() -> {
+            CountDownLatch countDownLatch = new CountDownLatch(5000000);
+            //Runnable runnable = () -> countDownLatch.countDown();
+            long now = System.currentTimeMillis();
+            for (int i = 0; i < 5000000; i++) {
+                threadPoolExecutor.execute(countDownLatch::countDown);
+            }
+
+            /*new Thread(() -> {
                 try {
                     for (int i = 0; i < 5000000; i++) {
                         blockingQueue.take();
@@ -54,9 +60,10 @@ public class Test {
                 for (int i = 0; i < 1250000; i++) {
                     blockingQueue.offer(runnable);
                 }
-            }).start();
+            }).start();*/
             countDownLatch.await();
             System.out.println(System.currentTimeMillis() - now);
+        }
             //threadPoolExecutor.shutdown();
     }
 

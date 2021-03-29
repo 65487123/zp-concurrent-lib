@@ -171,29 +171,34 @@ public class ThreadPoolExecutor implements ExecutorService {
                         firstTask = blockingQueue.take();
                     }
                 }
-            } catch (Throwable e) {
-                synchronized (workerList) {
-                    workerList.remove(this);
+            } catch (Throwable t) {
+                onCatchThrowable(t);
+            }
+        }
+
+        private void onCatchThrowable(Throwable t) {
+            synchronized (workerList) {
+                workerList.remove(this);
+            }
+            //判断是否是调用了shutdownNow()方法而导致的线程中断
+            if (!shutdownNow) {
+                Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+                //如果execute的任务抛出了未捕捉的异常，可以通过线程工厂创建线程的时候设置UncaughtExceptionHandler来捕捉
+                if ((uncaughtExceptionHandler = this.thread.getUncaughtExceptionHandler()) != null) {
+                    uncaughtExceptionHandler.uncaughtException(this.thread, t);
                 }
-                //判断是否是调用了shutdownNow()方法而导致的线程中断
-                if (!shutdownNow) {
-                    Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
-                    //如果execute的任务抛出了未捕捉的异常，可以通过线程工厂创建线程的时候设置UncaughtExceptionHandler来捕捉
-                    if ((uncaughtExceptionHandler = this.thread.getUncaughtExceptionHandler()) != null) {
-                        uncaughtExceptionHandler.uncaughtException(this.thread, e);
-                    }
-                    if (this.additional) {
-                        workerSum.decrementAndGet();
-                        additionThreadMax = false;
-                    } else {
-                        Runnable firstTask;
-                        while (!shutdown) {
-                            try {
-                                if ((firstTask = blockingQueue.poll(5, TimeUnit.SECONDS)) != null) {
-                                    workerList.add(new Worker(firstTask, false));
-                                    break;
-                                }
-                            } catch (InterruptedException ignored) { }
+                if (this.additional) {
+                    workerSum.decrementAndGet();
+                    additionThreadMax = false;
+                } else {
+                    Runnable firstTask;
+                    while (!shutdown) {
+                        try {
+                            if ((firstTask = blockingQueue.poll(5, TimeUnit.SECONDS)) != null) {
+                                workerList.add(new Worker(firstTask, false));
+                                break;
+                            }
+                        } catch (InterruptedException ignored) {
                         }
                     }
                 }
@@ -270,32 +275,7 @@ public class ThreadPoolExecutor implements ExecutorService {
             rejectedExecutionHandler.rejectedExecution(command, this);
             //判断线程数是否已经达到核心线程数
         } else if (coreThreadMax) {
-            if (!blockingQueue.offer(command)) {
-                //核心线程数满了,队列也满了,判断线程数是否已经达到最大线程数
-                if (additionThreadMax) {
-                    rejectedExecutionHandler.rejectedExecution(command, this);
-                } else {
-                    //没达到最大线程数,进行cas,然后看是否抢到创建额外线程的权利
-                    if (workerSum.getAndIncrement() >= maxNum) {
-                        //没抢到,线程数量减回去
-                        workerSum.getAndDecrement();
-                        //执行拒绝策略前再入队一次，步成功就执行拒绝策略
-                        if (!blockingQueue.offer(command)) {
-                            rejectedExecutionHandler.rejectedExecution(command, this);
-                        }
-                    } else {
-                        //抢到了创建额外线程权力
-                        if (workerSum.get() == maxNum) {
-                            this.additionThreadMax = true;
-                        }
-                        synchronized (workerList) {
-                            if (!shutdown) {
-                                workerList.add(new Worker(command, true));
-                            }
-                        }
-                    }
-                }
-            }
+            branchForCoreThreadMax(command);
         } else {
             //线程数量没达到核心线程数，争抢创建核心线程机会
             if (workerSum.getAndIncrement() >= coreNum) {
@@ -329,6 +309,34 @@ public class ThreadPoolExecutor implements ExecutorService {
         }
     }
 
+    private void branchForCoreThreadMax(Runnable command){
+        if (!blockingQueue.offer(command)) {
+            //核心线程数满了,队列也满了,判断线程数是否已经达到最大线程数
+            if (additionThreadMax) {
+                rejectedExecutionHandler.rejectedExecution(command, this);
+            } else {
+                //没达到最大线程数,进行cas,然后看是否抢到创建额外线程的权利
+                if (workerSum.getAndIncrement() >= maxNum) {
+                    //没抢到,线程数量减回去
+                    workerSum.getAndDecrement();
+                    //执行拒绝策略前再入队一次，步成功就执行拒绝策略
+                    if (!blockingQueue.offer(command)) {
+                        rejectedExecutionHandler.rejectedExecution(command, this);
+                    }
+                } else {
+                    //抢到了创建额外线程权力
+                    if (workerSum.get() == maxNum) {
+                        this.additionThreadMax = true;
+                    }
+                    synchronized (workerList) {
+                        if (!shutdown) {
+                            workerList.add(new Worker(command, true));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public List<Runnable> shutdownNow() {
