@@ -277,38 +277,13 @@ public class ThreadPoolExecutor implements ExecutorService {
         } else if (coreThreadMax) {
             branchForCoreThreadMax(command);
         } else {
-            //线程数量没达到核心线程数，争抢创建核心线程机会
-            if (workerSum.getAndIncrement() >= coreNum) {
-                //没抢到创建核心线程机会，入队
-                if (blockingQueue.offer(command)) {
-                    workerSum.getAndDecrement();
-                } else {
-                    //发现队列已满，查看是否抢到创建额外线程机会
-                    if (workerSum.get() <= maxNum) {
-                        synchronized (workerList) {
-                            if (!shutdown) {
-                                workerList.add(new Worker(command, true));
-                            }
-                        }
-                    } else {
-                        workerSum.getAndDecrement();
-                        rejectedExecutionHandler.rejectedExecution(command, this);
-                    }
-                }
-            } else {
-                //抢到创建核心线程机会
-                if (workerSum.intValue() == coreNum) {
-                    this.coreThreadMax = true;
-                }
-                synchronized (workerList) {
-                    if (!shutdown) {
-                        workerList.add(new Worker(command, false));
-                    }
-                }
-            }
+            branchForCoreThrNotMax(command);
         }
     }
 
+    /**
+     * 如果线程数量已经达到核心线程数,进入这个方法
+     */
     private void branchForCoreThreadMax(Runnable command){
         if (!blockingQueue.offer(command)) {
             //核心线程数满了,队列也满了,判断线程数是否已经达到最大线程数
@@ -333,6 +308,41 @@ public class ThreadPoolExecutor implements ExecutorService {
                             workerList.add(new Worker(command, true));
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * 如果线程数量还没达到核心线程数量,进入这个方法
+     */
+    private void branchForCoreThrNotMax(Runnable command){
+        //线程数量没达到核心线程数，争抢创建核心线程机会
+        if (workerSum.getAndIncrement() >= coreNum) {
+            //没抢到创建核心线程机会，入队
+            if (blockingQueue.offer(command)) {
+                workerSum.getAndDecrement();
+            } else {
+                //发现队列已满，查看是否抢到创建额外线程机会
+                if (workerSum.get() <= maxNum) {
+                    synchronized (workerList) {
+                        if (!shutdown) {
+                            workerList.add(new Worker(command, true));
+                        }
+                    }
+                } else {
+                    workerSum.getAndDecrement();
+                    rejectedExecutionHandler.rejectedExecution(command, this);
+                }
+            }
+        } else {
+            //抢到创建核心线程机会
+            if (workerSum.intValue() == coreNum) {
+                this.coreThreadMax = true;
+            }
+            synchronized (workerList) {
+                if (!shutdown) {
+                    workerList.add(new Worker(command, false));
                 }
             }
         }

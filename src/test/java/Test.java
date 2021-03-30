@@ -1,14 +1,13 @@
-import com.lzp.util.concurrent.blockingQueue.lockless.NoSideEffectLocklessQueue;
 import com.lzp.util.concurrent.blockingQueue.lockless.OneToOneBlockingQueue;
-import com.lzp.util.concurrent.blockingQueue.withlock.OptimizedArrBlockQueue;
 import com.lzp.util.concurrent.latch.CountDownLatch;
-import com.lzp.util.concurrent.threadpool.RejectExecuHandler;
-import com.lzp.util.concurrent.threadpool.ThreadPoolExecutor;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -19,10 +18,11 @@ import java.util.concurrent.*;
  */
 public class Test {
     static void a() throws InterruptedException {
-            BlockingQueue blockingQueue = new ArrayBlockingQueue(500000);
-            com.lzp.util.concurrent.threadpool.ThreadPoolExecutor threadPoolExecutor = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(4, 4, 0, blockingQueue, (r, executor) -> r.run());
-            //java.util.concurrent.ThreadPoolExecutor threadPoolExecutor = new java.util.concurrent.ThreadPoolExecutor(4, 4, 0,TimeUnit.SECONDS, blockingQueue, (r, executor) -> r.run());
-        for (int j = 0; j < 10; j++) {
+        BlockingQueue blockingQueue = new ArrayBlockingQueue(500000);
+        //com.lzp.util.concurrent.threadpool.ThreadPoolExecutor threadPoolExecutor = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(6, 6, 0, blockingQueue, (r, executor) -> r.run());
+        java.util.concurrent.ThreadPoolExecutor threadPoolExecutor = new java.util.concurrent.ThreadPoolExecutor(6, 6, 0,TimeUnit.SECONDS, blockingQueue, (r, executor) -> r.run());
+        long k = 0;
+        for (int j = 0; j < 50; j++) {
 
             CountDownLatch countDownLatch = new CountDownLatch(5000000);
             //Runnable runnable = () -> countDownLatch.countDown();
@@ -62,9 +62,10 @@ public class Test {
                 }
             }).start();*/
             countDownLatch.await();
-            System.out.println(System.currentTimeMillis() - now);
+            k += System.currentTimeMillis() - now;
         }
-            //threadPoolExecutor.shutdown();
+        System.out.println(new BigDecimal(k).divide(new BigDecimal(50), 3, BigDecimal.ROUND_CEILING));
+        //threadPoolExecutor.shutdown();
     }
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, IOException, ClassNotFoundException {
