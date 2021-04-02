@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
   * Description:对{@link java.util.concurrent.CountDownLatch} 做了优化，
   *
   * 1、性能比他高很多
+  * 2、内存占用比他小
   * 2、可重用(调用reset(),计数器会复位)
   *
   *
@@ -31,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
   */
  public class CountDownLatch {
 
-     private AtomicInteger atomicInteger;
+     private final AtomicInteger atomicInteger;
 
      private volatile boolean reachZero = false;
 
