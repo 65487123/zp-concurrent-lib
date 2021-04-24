@@ -87,43 +87,23 @@ public class ScheduledFutureImp<R> extends ListenableFuture<R> implements Schedu
                     this.deadLine += this.time;
                     try {
                         if (this.getState() == 0) {
-                            this.setThread(Thread.currentThread());
-                            this.call();
-                            this.setThread(null);
-                            Thread.interrupted();
+                            executeCall();
                             //如果线程池已经被shutdown了，那么队列中会多这一个任务，没什么大影响
                             this.taskQueue.offer(this);
                         }
                     } catch (Throwable t) {
-                        if (this.getThrowable() instanceof CancellationException) {
-                            return;
-                        }
-                        this.setThrowable(t);
-                        this.setState(2);
-                        synchronized (this) {
-                            this.notifyAll();
-                        }
+                        setThrowableIfNecessary(t);
                     }
                 } else {
                     try {
                         if (this.getState() == 0) {
-                            this.setThread(Thread.currentThread());
-                            this.call();
-                            this.setThread(null);
-                            Thread.interrupted();
+                            executeCall();
                             this.deadLine = System.currentTimeMillis() + this.time;
                             //如果线程池已经被shutdown了，那么队列中会多这一个任务，没什么大影响
                             this.taskQueue.offer(this);
                         }
-                    } catch (Exception t) {
-                        if (this.getThrowable() instanceof CancellationException) {
-                            return;
-                        }
-                        this.setThrowable(t);
-                        this.setState(2);
-                        synchronized (this) {
-                            this.notifyAll();
-                        }
+                    } catch (Throwable t) {
+                        setThrowableIfNecessary(t);
                     }
                 }
             } else {
@@ -131,6 +111,26 @@ public class ScheduledFutureImp<R> extends ListenableFuture<R> implements Schedu
             }
         }
     }
+
+    private void executeCall() throws Exception {
+        this.setThread(Thread.currentThread());
+        this.call();
+        this.setThread(null);
+        Thread.interrupted();
+    }
+
+    private void setThrowableIfNecessary (Throwable t) {
+        if (this.getThrowable() instanceof CancellationException) {
+            return;
+        }
+        this.setThrowable(t);
+        this.setState(2);
+        synchronized (this) {
+            this.notifyAll();
+        }
+    }
+
+
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
