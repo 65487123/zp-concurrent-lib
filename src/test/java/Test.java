@@ -17,54 +17,27 @@ import java.util.concurrent.atomic.AtomicLong;
  * @date: 2020/8/9 11:46
  */
 public class Test {
+    /**
+     * 测试ThreadPoolExecutor execute()空任务耗时
+     */
     static void a() throws InterruptedException {
-        BlockingQueue blockingQueue = new ArrayBlockingQueue(500000);
-        //com.lzp.util.concurrent.threadpool.ThreadPoolExecutor threadPoolExecutor = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(6, 6, 0, blockingQueue, (r, executor) -> r.run());
-        java.util.concurrent.ThreadPoolExecutor threadPoolExecutor = new java.util.concurrent.ThreadPoolExecutor(6, 6, 0,TimeUnit.SECONDS, blockingQueue, (r, executor) -> r.run());
+        //ArrayBlockingQueue 会被jit大幅优化
+        BlockingQueue blockingQueue = new ArrayBlockingQueue(10000000);
+        Runnable runnable = () -> {};
+
         long k = 0;
-        for (int j = 0; j < 50; j++) {
-
-            CountDownLatch countDownLatch = new CountDownLatch(5000000);
-            //Runnable runnable = () -> countDownLatch.countDown();
+        for (int j = 0; j < 5; j++) {
+            //com.lzp.util.concurrent.threadpool.ThreadPoolExecutor threadPoolExecutor = new com.lzp.util.concurrent.threadpool.ThreadPoolExecutor(4, 4, 0, blockingQueue, (r, executor) -> r.run());
+            java.util.concurrent.ThreadPoolExecutor threadPoolExecutor = new java.util.concurrent.ThreadPoolExecutor(4, 4, 0,TimeUnit.SECONDS, blockingQueue, (r, executor) -> r.run());
             long now = System.currentTimeMillis();
-            for (int i = 0; i < 5000000; i++) {
-                threadPoolExecutor.execute(countDownLatch::countDown);
+            for (int i = 0; i < 10000000; i++) {
+                threadPoolExecutor.execute(runnable);
             }
-
-            /*new Thread(() -> {
-                try {
-                    for (int i = 0; i < 5000000; i++) {
-                        blockingQueue.take();
-                        countDownLatch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-            new Thread(() -> {
-                for (int i = 0; i < 1250000; i++) {
-                    blockingQueue.offer(runnable);
-                }
-            }).start();
-            new Thread(() -> {
-                for (int i = 0; i < 1250000; i++) {
-                    blockingQueue.offer(runnable);
-                }
-            }).start();
-            new Thread(() -> {
-                for (int i = 0; i < 1250000; i++) {
-                    blockingQueue.offer(runnable);
-                }
-            }).start();
-            new Thread(() -> {
-                for (int i = 0; i < 1250000; i++) {
-                    blockingQueue.offer(runnable);
-                }
-            }).start();*/
-            countDownLatch.await();
+            threadPoolExecutor.shutdown();
+            threadPoolExecutor.awaitTermination(19999,TimeUnit.SECONDS);
             k += System.currentTimeMillis() - now;
         }
-        System.out.println(new BigDecimal(k).divide(new BigDecimal(50), 3, BigDecimal.ROUND_CEILING));
+        System.out.println(new BigDecimal(k).divide(new BigDecimal(5), 3, BigDecimal.ROUND_CEILING));
         //threadPoolExecutor.shutdown();
     }
 
