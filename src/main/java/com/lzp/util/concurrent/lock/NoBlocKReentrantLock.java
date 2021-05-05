@@ -141,7 +141,7 @@ public class NoBlocKReentrantLock implements Lock {
                 entrCount.getAndIncrement();
                 return;
             }
-            LockSupport.parkNanos(1000);
+            Thread.yield();
         }
     }
 
