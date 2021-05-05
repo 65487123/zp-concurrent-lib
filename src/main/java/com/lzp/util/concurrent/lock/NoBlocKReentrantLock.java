@@ -29,7 +29,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Description:不会进入阻塞状态的可重入锁
  * 适用场景：同步代码块中的执行代码很少,且竞争线程少,稍微自旋个几次就能拿到锁，没必要用户态切换到内核态。
- * 比如用锁只为实现线程间通信(Condition的await()、signal()/signalAll());
+ * 或用锁只为实现线程间通信(Condition的await()、signal()/signalAll());
  *
  * @author: Zeping Lu
  * @date: 2020/12/31 10:15
