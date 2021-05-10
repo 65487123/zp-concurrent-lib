@@ -22,6 +22,12 @@
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk3.png)
 ![juc](https://github.com/65487123/zp-concurrent-lib/raw/master/picture/jdk4.png)
 ##### 自测截图解释
+
+    实际上，这样测试不是特别严谨，因为CountDownLatch.countDown()方法会因为线程之间激烈竞争而导致性能下降。
+    最好是先记录起始时刻，然后把四个任务丢到线程池中执行，然后调用线程池的shutdown(),接着调用线程池的
+    awaitTermination()阻塞等待线程池关闭，最后记录花了的时间。
+    不过我这样测也基本能说明问题了(总耗时越少，说明countdownlatch耗时越多)。  
+    
     测试结果，不同主机结果不同。实际上，我后面换了台主机，测试结果差距都在十倍以上。具体差距
     可以拉代码测测
 
