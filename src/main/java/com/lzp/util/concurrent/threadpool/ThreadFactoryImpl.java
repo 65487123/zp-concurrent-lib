@@ -38,9 +38,8 @@ public class ThreadFactoryImpl implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
-        return new Thread(group, r,
-                namePrefix + threadNumber.getAndIncrement(),
-                0);
+        return new Thread(group, r, namePrefix
+                + threadNumber.getAndIncrement(), 0);
     }
 
 }

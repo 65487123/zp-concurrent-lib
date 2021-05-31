@@ -378,7 +378,6 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable, Iterable<E
     private synchronized void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
 
-        // Write out all elements in the proper order.
         for (int i = 0; i < size; i++) {
             s.writeObject(elementData[i]);
         }

@@ -367,8 +367,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             Node<K, V> newNode = new Node<>(key, value, null, h);
             if (!U.compareAndSwapObject(TABLE, BASE + ((long) i << ASHIFT), null, newNode)) {
                 Node<K, V> node;
-                //java中,while(true)和for(;;)编译后生成的字节码一模一样
-                while (true) {
+                for (; ; ) {
                     synchronized (node = tabAt(tab, i)) {
                         if (node == (node = tabAt(tab, i))) {
                             if (node.key == null) {

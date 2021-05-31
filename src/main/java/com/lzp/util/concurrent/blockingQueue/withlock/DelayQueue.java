@@ -356,8 +356,7 @@
          long remainingTime = unit.toMillis(timeout);
          long deadline = System.currentTimeMillis() + remainingTime;
          try {
-             //java中,while(true)和for(;;)编译后生成的字节码一模一样
-             while (true) {
+             for (; ; ) {
                  E first = q.peek();
                  if (first == null) {
                      if (remainingTime <= 0) {
@@ -374,7 +373,6 @@
                      if (remainingTime <= 0) {
                          return null;
                      }
-                     first = null;
                      if (remainingTime < delay || leader != null) {
                          this.wait(remainingTime);
                          remainingTime = deadline - System.currentTimeMillis();

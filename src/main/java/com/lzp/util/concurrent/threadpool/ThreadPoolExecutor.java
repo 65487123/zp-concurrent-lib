@@ -567,8 +567,6 @@ import java.util.concurrent.atomic.AtomicInteger;
              final long deadline = System.nanoTime() + nanos;
              final int size = futures.size();
 
-             // Interleave time checks and calls to execute in case
-             // executor doesn't have any/much parallelism.
              for (int i = 0; i < size; i++) {
                  execute((Runnable) futures.get(i));
                  nanos = deadline - System.nanoTime();
