@@ -77,11 +77,9 @@ import java.util.concurrent.atomic.AtomicInteger;
       * @throws InterruptedException if the current thread is interrupted
       *                              while waiting
       */
-     public void await() throws InterruptedException {
-         synchronized (this) {
-             while (!reachZero) {
-                 this.wait();
-             }
+     public synchronized void await() throws InterruptedException {
+         while (!reachZero) {
+             this.wait();
          }
      }
 

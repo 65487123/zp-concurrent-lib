@@ -122,11 +122,9 @@ public class ConcurrentArrayList<E> implements List<E>, Serializable, Iterable<E
     @Override
     public boolean contains(Object o) {
         Object[] elementDataView;
-        {
-            synchronized (this) {
-                elementDataView = new Object[size];
-                System.arraycopy(elementData, 0, elementDataView, 0, size);
-            }
+        synchronized (this) {
+            elementDataView = new Object[size];
+            System.arraycopy(elementData, 0, elementDataView, 0, size);
         }
         if (o == null) {
             for (Object value : elementDataView) {
