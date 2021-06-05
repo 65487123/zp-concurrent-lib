@@ -45,7 +45,7 @@
 
          private static final long serialVersionUID = -7764885057309804111L;
 
-         transient Object[] queue = new Object[10];
+         private transient Object[] queue = new Object[10];
 
          private int size = 0;
 
