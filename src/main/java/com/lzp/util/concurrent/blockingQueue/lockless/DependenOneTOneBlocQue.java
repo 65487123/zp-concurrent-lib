@@ -55,7 +55,7 @@ public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
-    private final int m;
+    private final int M;
 
     private final int[] HEAD = new int[27];
 
@@ -65,13 +65,13 @@ public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
     public DependenOneTOneBlocQue(int preferCapacity) {
         int capacity = tableSizeFor(preferCapacity);
         ARRAY = (E[]) new Object[capacity];
-        m = capacity - 1;
+        M = capacity - 1;
     }
 
     public DependenOneTOneBlocQue() {
         int capacity = tableSizeFor(100000);
         ARRAY = (E[]) new Object[capacity];
-        m = capacity - 1;
+        M = capacity - 1;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
         if (obj == null){
             throw new NullPointerException();
         }
-        int p = HEAD[11]++ & m;
+        int p = HEAD[11]++ & M;
         while (ARRAY[p] != null) {
             //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况
             Thread.yield();
@@ -91,7 +91,7 @@ public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
     @Override
     public E take() throws InterruptedException {
         E e;
-        int p = TAIL[0]++ & m;
+        int p = TAIL[0]++ & M;
         while ((e = ARRAY[p]) == null) {
             Thread.yield();
         }
@@ -104,7 +104,7 @@ public class DependenOneTOneBlocQue<E> extends BlockingQueueAdapter<E> {
         long now = 0;
         long time = unit.toMillis(timeout);
         E e;
-        int p = TAIL[0]++ & m;
+        int p = TAIL[0]++ & M;
         while ((e = ARRAY[p]) == null) {
             if (now == 0) {
                 now = System.currentTimeMillis();

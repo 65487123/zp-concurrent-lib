@@ -55,7 +55,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
-    private final int m;
+    private final int M;
 
     private final int[] HEAD = new int[27];
 
@@ -65,13 +65,13 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
     public OneToOneBlockingQueue(int preferCapacity) {
         int capacity = tableSizeFor(preferCapacity);
         ARRAY = (E[]) new Object[capacity];
-        m = capacity - 1;
+        M = capacity - 1;
     }
 
     public OneToOneBlockingQueue() {
         int capacity = tableSizeFor(100000);
         ARRAY = (E[]) new Object[capacity];
-        m = capacity - 1;
+        M = capacity - 1;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
         if (obj == null){
             throw new NullPointerException();
         }
-        int p = HEAD[11]++ & m;
+        int p = HEAD[11]++ & M;
         while (ARRAY[p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
             Thread.sleep(1);
@@ -91,7 +91,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
     @Override
     public E take() throws InterruptedException {
         E e;
-        int p = TAIL[0]++ & m;
+        int p = TAIL[0]++ & M;
         while ((e = ARRAY[p]) == null) {
             //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
             Thread.sleep(1);
@@ -105,7 +105,7 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
         long now = 0;
         long time = unit.toMillis(timeout);
         E e;
-        int p = TAIL[0]++ & m;
+        int p = TAIL[0]++ & M;
         while ((e = ARRAY[p]) == null) {
             if (now == 0) {
                 now = System.currentTimeMillis();

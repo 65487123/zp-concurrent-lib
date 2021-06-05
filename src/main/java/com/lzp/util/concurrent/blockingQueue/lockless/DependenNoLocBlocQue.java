@@ -47,11 +47,11 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
      * 由于每部份数组块只被同一个线程操作，所以写数据的时候也不需要进行cas（不可能会出现两个写线程
      * 同时在等一个位置被释放）
      */
-    private E[][] array;
+    private final E[][] ARRAY;
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
-    private final int m;
+    private final int M;
 
     private long padding1, padding2, padding3, padding4, padding5;
     private int padding6;
@@ -63,11 +63,11 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
     public DependenNoLocBlocQue(int preferCapacity, int threadSum) {
         int capacity = tableSizeFor(preferCapacity);
         int capacityPerSlot = capacity / threadSum;
-        array = (E[][]) new Object[threadSum][capacityPerSlot];
+        ARRAY = (E[][]) new Object[threadSum][capacityPerSlot];
         //int占4个字节
         HEAD = new int[16 * threadSum];
         TAIL = new int[16 * threadSum];
-        m = capacityPerSlot - 1;
+        M = capacityPerSlot - 1;
     }
 
     @Override
@@ -75,12 +75,12 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
         if (obj == null){
             throw new NullPointerException();
         }
-        int p = HEAD[16 * threadId]++ & m;
-        while (array[threadId][p] != null) {
+        int p = HEAD[16 * threadId]++ & M;
+        while (ARRAY[threadId][p] != null) {
             //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况
             Thread.yield();
         }
-        array[threadId][p] = obj;
+        ARRAY[threadId][p] = obj;
     }
 
 
@@ -90,9 +90,9 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
         //java中,while(true)和for(;;)编译后生成的字节码一模一样
         while (true) {
             for (int i = 0; i < TAIL.length; i += 16) {
-                int p = TAIL[i] & this.m;
-                if ((r = array[i / 16][p]) != null) {
-                    array[i / 16][p] = null;
+                int p = TAIL[i] & this.M;
+                if ((r = ARRAY[i / 16][p]) != null) {
+                    ARRAY[i / 16][p] = null;
                     TAIL[i]++;
                     return r;
                 }

@@ -51,7 +51,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
-    private final int m;
+    private final int M;
 
     private long padding1, padding2, padding3, padding4, padding5;
     private int padding6;
@@ -67,7 +67,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
         //int占4个字节
         HEAD = new int[16 * threadSum];
         TAIL = new int[16 * threadSum];
-        m = capacityPerSlot - 1;
+        M = capacityPerSlot - 1;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
         if (obj==null){
             throw new NullPointerException();
         }
-        int p = HEAD[16 * threadId]++ & m;
+        int p = HEAD[16 * threadId]++ & M;
         while (ARRAY[threadId][p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
             Thread.sleep(1);
@@ -89,7 +89,7 @@ public class NoLockBlockingQueue<E> extends BlockingQueueAdapter<E> {
         E r;
         while (true) {
             for (int i = 0; i < TAIL.length; i += 16) {
-                int p = TAIL[i] & this.m;
+                int p = TAIL[i] & this.M;
                 if ((r = ARRAY[i / 16][p]) != null) {
                     ARRAY[i / 16][p] = null;
                     TAIL[i]++;
