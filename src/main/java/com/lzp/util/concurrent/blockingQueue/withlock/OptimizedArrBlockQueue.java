@@ -22,7 +22,6 @@
  import java.util.concurrent.BlockingQueue;
  import java.util.concurrent.TimeUnit;
  import java.util.concurrent.atomic.AtomicInteger;
- import java.util.concurrent.locks.LockSupport;
 
  /**
   * Description:
@@ -85,9 +84,9 @@
       */
      private transient final Object[] items;
 
-     private final Object putWatingLock = new Object();
+     private final Object PUT_WAITING_LOCK = new Object();
 
-     private final Object takeWatingLock = new Object();
+     private final Object TAKE_WAITING_LOCK = new Object();
 
      private final AtomicInteger size = new AtomicInteger();
 
@@ -127,11 +126,11 @@
              if (putSpinSucceed()) {
                  break;
              }
-             synchronized (putWatingLock) {
+             synchronized (PUT_WAITING_LOCK) {
                  if (size.get() != items.length) {
                      break;
                  }
-                 putWatingLock.wait();
+                 PUT_WAITING_LOCK.wait();
              }
          }
          enqueue(e, items);
@@ -151,12 +150,12 @@
              if (putSpinSucceed()) {
                  break;
              }
-             synchronized (putWatingLock) {
+             synchronized (PUT_WAITING_LOCK) {
                  if (size.get() != items.length) {
                      break;
                  }
                  long deadline = System.currentTimeMillis() + remainingTime;
-                 putWatingLock.wait(remainingTime);
+                 PUT_WAITING_LOCK.wait(remainingTime);
                  if (size.get() != items.length) {
                      break;
                  } else {
@@ -191,11 +190,11 @@
                  if (takeSpinSucceed()){
                      break;
                  }
-                 synchronized (takeWatingLock) {
+                 synchronized (TAKE_WAITING_LOCK) {
                      if (size.get() != 0) {
                          break;
                      }
-                     takeWatingLock.wait();
+                     TAKE_WAITING_LOCK.wait();
                  }
              }
              e = (E) items[takeIndex];
@@ -227,12 +226,12 @@
                  if (takeSpinSucceed()){
                      break;
                  }
-                 synchronized (takeWatingLock) {
+                 synchronized (TAKE_WAITING_LOCK) {
                      if (size.get() != 0) {
                          break;
                      }
                      long deadline = System.currentTimeMillis() + remainingTime;
-                     takeWatingLock.wait(remainingTime);
+                     TAKE_WAITING_LOCK.wait(remainingTime);
                      if (size.get() != 0) {
                          break;
                      } else {
@@ -302,8 +301,8 @@
      private void enqueue(E e, Object[] items) {
          items[putIndex++] = e;
          if (size.getAndIncrement() == 0) {
-             synchronized (takeWatingLock) {
-                 takeWatingLock.notify();
+             synchronized (TAKE_WAITING_LOCK) {
+                 TAKE_WAITING_LOCK.notify();
              }
          }
          if (putIndex == items.length) {
@@ -314,8 +313,8 @@
      private void dequeue(Object[] items) {
          items[takeIndex++] = null;
          if (size.getAndDecrement() == items.length) {
-             synchronized (putWatingLock) {
-                 putWatingLock.notify();
+             synchronized (PUT_WAITING_LOCK) {
+                 PUT_WAITING_LOCK.notify();
              }
          }
          if (takeIndex == items.length) {

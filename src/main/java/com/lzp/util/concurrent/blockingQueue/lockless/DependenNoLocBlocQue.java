@@ -56,8 +56,8 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
     private long padding1, padding2, padding3, padding4, padding5;
     private int padding6;
 
-    private int[] head;
-    private int[] tail;
+    private final int[] HEAD;
+    private final int[] TAIL;
 
 
     public DependenNoLocBlocQue(int preferCapacity, int threadSum) {
@@ -65,8 +65,8 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
         int capacityPerSlot = capacity / threadSum;
         array = (E[][]) new Object[threadSum][capacityPerSlot];
         //int占4个字节
-        head = new int[16 * threadSum];
-        tail = new int[16 * threadSum];
+        HEAD = new int[16 * threadSum];
+        TAIL = new int[16 * threadSum];
         m = capacityPerSlot - 1;
     }
 
@@ -75,7 +75,7 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
         if (obj == null){
             throw new NullPointerException();
         }
-        int p = head[16 * threadId]++ & m;
+        int p = HEAD[16 * threadId]++ & m;
         while (array[threadId][p] != null) {
             //消费速度远跟不上生产速度。由于这队列用作生产者消费者有依赖关系的，所以基本不会出现这种情况
             Thread.yield();
@@ -89,11 +89,11 @@ public class DependenNoLocBlocQue<E> extends BlockingQueueAdapter<E> {
         E r;
         //java中,while(true)和for(;;)编译后生成的字节码一模一样
         while (true) {
-            for (int i = 0; i < tail.length; i += 16) {
-                int p = tail[i] & this.m;
+            for (int i = 0; i < TAIL.length; i += 16) {
+                int p = TAIL[i] & this.m;
                 if ((r = array[i / 16][p]) != null) {
                     array[i / 16][p] = null;
-                    tail[i]++;
+                    TAIL[i]++;
                     return r;
                 }
             }

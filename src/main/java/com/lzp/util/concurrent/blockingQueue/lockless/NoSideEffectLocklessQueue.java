@@ -28,7 +28,7 @@
   */
  public class NoSideEffectLocklessQueue<E> extends BlockingQueueAdapter<E> {
 
-     private E[] array;
+     private final E[] ARRAY;
 
      private final int M;
 
@@ -47,18 +47,18 @@
          if (preferCapacity <= 0) {
              throw new IllegalArgumentException();
          } else if (preferCapacity < minCapacity) {
-             array = (E[]) new Object[minCapacity];
+             ARRAY = (E[]) new Object[minCapacity];
              M = minCapacity - 1;
          } else {
              int capacity = tableSizeFor(preferCapacity);
-             array = (E[]) new Object[capacity];
+             ARRAY = (E[]) new Object[capacity];
              M = capacity - 1;
          }
      }
 
      public NoSideEffectLocklessQueue() {
          int minCapacity = 64;
-         array = (E[]) new Object[minCapacity];
+         ARRAY = (E[]) new Object[minCapacity];
          M = minCapacity - 1;
      }
 
@@ -73,9 +73,9 @@
              Thread.yield();
          }
          int p = head.getAndIncrement() & M;
-         if (array[p] != null) {
+         if (ARRAY[p] != null) {
              Thread.yield();
-             for (int i = 0; array[p] != null; i++) {
+             for (int i = 0; ARRAY[p] != null; i++) {
                  //如果已经有put线程在阻塞等待了，说明取元素并不频繁，自旋没意义
                  if (!hasPuttingWaiter && i < 100) {
                      Thread.yield();
@@ -83,7 +83,7 @@
                  }
                  synchronized (head) {
                      hasPuttingWaiter = true;
-                     if (array[p] == null) {
+                     if (ARRAY[p] == null) {
                          break;
                      }
                      head.wait();
@@ -91,7 +91,7 @@
                  }
              }
          }
-         array[p] = obj;
+         ARRAY[p] = obj;
          synchronized (this) {
              //如果有取元素的线程在阻塞等待，则notify
              if (hasTakingWaiter) {
@@ -111,9 +111,9 @@
              Thread.yield();
          }
          int p = tail.getAndIncrement() & M;
-         if ((e = array[p]) == null) {
+         if ((e = ARRAY[p]) == null) {
              Thread.yield();
-             for (int i = 0; (e = array[p]) == null; i++) {
+             for (int i = 0; (e = ARRAY[p]) == null; i++) {
                  //如果已经有take线程在阻塞等待了，说明取元素并不频繁，自旋没意义
                  if (!hasTakingWaiter && i < 100) {
                      Thread.yield();
@@ -121,7 +121,7 @@
                  }
                  synchronized (this) {
                      hasTakingWaiter = true;
-                     if ((e = array[p]) != null) {
+                     if ((e = ARRAY[p]) != null) {
                          break;
                      }
                      this.wait();
@@ -129,7 +129,7 @@
                  }
              }
          }
-         array[p] = null;
+         ARRAY[p] = null;
          synchronized (head) {
              if (hasPuttingWaiter) {
                  head.notifyAll();
@@ -142,8 +142,8 @@
      @Override
      public int size() {
          int size = totalSize.get();
-         if (size > this.array.length) {
-             return array.length;
+         if (size > this.ARRAY.length) {
+             return ARRAY.length;
          } else {
              return Math.max(size, 0);
          }

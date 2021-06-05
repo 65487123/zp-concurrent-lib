@@ -51,26 +51,26 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
      * 同时在等一个位置被释放）
      *
      */
-    private E[] array;
+    private final E[] ARRAY;
     /**
      * 4字节，加上对象头12字节，一共20字节，还差44字节
      */
     private final int m;
 
-    private int[] head = new int[27];
+    private final int[] HEAD = new int[27];
 
-    private int[] tail = new int[16];
+    private final int[] TAIL = new int[16];
 
 
     public OneToOneBlockingQueue(int preferCapacity) {
         int capacity = tableSizeFor(preferCapacity);
-        array = (E[]) new Object[capacity];
+        ARRAY = (E[]) new Object[capacity];
         m = capacity - 1;
     }
 
     public OneToOneBlockingQueue() {
         int capacity = tableSizeFor(100000);
-        array = (E[]) new Object[capacity];
+        ARRAY = (E[]) new Object[capacity];
         m = capacity - 1;
     }
 
@@ -79,24 +79,24 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
         if (obj == null){
             throw new NullPointerException();
         }
-        int p = head[11]++ & m;
-        while (array[p] != null) {
+        int p = HEAD[11]++ & m;
+        while (ARRAY[p] != null) {
             //这里sleep也有解决伪共享的效果，因为会给消费者1ms的时间取元素
             Thread.sleep(1);
         }
-        array[p] = obj;
+        ARRAY[p] = obj;
     }
 
 
     @Override
     public E take() throws InterruptedException {
         E e;
-        int p = tail[0]++ & m;
-        while ((e = array[p]) == null) {
+        int p = TAIL[0]++ & m;
+        while ((e = ARRAY[p]) == null) {
             //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
             Thread.sleep(1);
         }
-        array[p] = null;
+        ARRAY[p] = null;
         return  e;
     }
 
@@ -105,19 +105,19 @@ public class OneToOneBlockingQueue<E> extends BlockingQueueAdapter<E> {
         long now = 0;
         long time = unit.toMillis(timeout);
         E e;
-        int p = tail[0]++ & m;
-        while ((e = array[p]) == null) {
+        int p = TAIL[0]++ & m;
+        while ((e = ARRAY[p]) == null) {
             if (now == 0) {
                 now = System.currentTimeMillis();
             } else if (System.currentTimeMillis() - now > time) {
-                tail[0]--;
+                TAIL[0]--;
                 throw new InterruptedException();
             } else {
                 //这里sleep也有解决伪共享的效果，因为会给生产者1ms的时间去写
                 Thread.sleep(1);
             }
         }
-        array[p] = null;
+        ARRAY[p] = null;
         return e;
     }
 }
