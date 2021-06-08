@@ -41,7 +41,7 @@
 [ConcurrentArrayList.java](https://github.com/65487123/zp-concurrent-lib/blob/master/ConcurrentArrayList.md)
 #  任何场景性能稳定比JUC好并且无任何负作用的类(推荐使用)
     1、ThreadPoolExecutor.java(结合ListenableFuture.java使用):
-    并行执行任务额外性能开销小，并且支持返回可添加回调的Future
+    执行任务额外性能开销小、执行拒绝策略概率小,并且支持返回可添加回调的Future
     2、CountDownLatch.java：
     性能比juc包下的同名类高很多、内存占用比其小,并且可复用(调用reset(),计数器会复位)
     
