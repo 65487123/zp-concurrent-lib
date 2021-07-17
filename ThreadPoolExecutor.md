@@ -1,8 +1,6 @@
 # ThreadPoolExecutor
  线程池，功能和用法和java.util.concurrent.ThreadPoolExecutor完全一样
 
-# 特点：
-    对JDK的线程池做了些优化
     
 # 相比JUC包下的ThreadPoolExecutor的优势
 ## 达到最大线程数时优化了细节
