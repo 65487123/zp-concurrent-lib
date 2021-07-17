@@ -2,8 +2,7 @@
  线程池，功能和用法和java.util.concurrent.ThreadPoolExecutor完全一样
 
 # 特点：
-    1、简洁，线程池核心功能都实现了，但是实现过程没有复杂的骚操作。
-    2、对JDK的线程池做了些优化
+    对JDK的线程池做了些优化
     
 # 相比JUC包下的ThreadPoolExecutor的优势
 ## 达到最大线程数时优化了细节
