@@ -6,8 +6,8 @@
     1、拉取代码到本地
     2、mvn install代码
     3、项目中加入依赖
-    <groupId>com.lzp</groupId>
-    <artifactId>zp-concurrent-lib</artifactId>
+    <groupId>com.lzp.zp-concurrent-lib</groupId>
+    <artifactId>zp-concurrent-lib-core</artifactId>
     <version>1.0</version>
 #  目前实现的类
 ## com.lzp.util.concurrent.threadpool
