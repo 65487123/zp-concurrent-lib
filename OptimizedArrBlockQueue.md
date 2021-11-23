@@ -6,8 +6,12 @@
     性能高：
     1、ArrayBlockingQueue取元素和放元素用的是同一把锁，多线程同时读写时严重影响性能
     而我这个这个队列取元素和放元素锁的是不同的对象
-    2、ArrayBlockingQueue用的是JUC里的Lock锁，而我这个用的是synchronized锁，
-    经过实测，synchronized(jdk1.6以后)性能比JUC里的lock锁性能高
+    2、ArrayBlockingQueue用的是JUC里的Lock锁，而我这个用的是synchronized锁
+    synchronized相比于Lock锁的优势
+    (1)内存占用少：synchronized锁标记是在对象头里,所以任何对象都能当成锁,不需要额外new锁对象。
+    (2)性能不比Lock锁差：经过实测,不管线程竞争是否激烈,关闭JIT的情况下，synchronized性能远远
+    高于Lock锁,开启JIT的情况下,synchronized性能相比Lock也差不了多少。(JUC里的Lock锁由于是
+    java代码实现的,所以能更大地享受到JIT的收益
 ### 性能测试结果
     
 ### 一个生产线程对一个消费线程
