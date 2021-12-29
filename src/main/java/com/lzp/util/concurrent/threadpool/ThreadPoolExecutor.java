@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
   * 注意：threadPoolExecutor得是成员变量
   *
   * 这样做虽说能大致实现上面所说的执行顺序，但是如果用的是{@link java.util.concurrent.ThreadPoolExecutor},会有问题的：
-  * 当execute()一个任务时，发现线程数没达到最大线程数，然后在争夺创建额外线程时失败了，这时候直接就会执行
+  * 当execute()一个任务时，发现线程数达到最大线程数了，或者是线程数没达到最大线程数，但在争夺创建额外线程时失败了，这时直接就会执行
   * 拒绝策略了。 如果是默认的拒绝策略，就抛异常了.......
   * 而我这个线程池就没这个问题
   *
@@ -311,7 +311,9 @@ import java.util.concurrent.atomic.AtomicInteger;
          } else {
              //核心线程数满了,队列也满了,判断线程数是否已经达到最大线程数
              if (additionThreadMax) {
-                 rejectedExecutionHandler.rejectedExecution(command, this);
+                 if (!blockingQueue.offer(command)) {
+                     rejectedExecutionHandler.rejectedExecution(command, this);
+                 }
              } else {
                  //没达到最大线程数,进行cas,然后看是否抢到创建额外线程的权利
                  if (workerSum.getAndIncrement() >= MAX_NUM) {
