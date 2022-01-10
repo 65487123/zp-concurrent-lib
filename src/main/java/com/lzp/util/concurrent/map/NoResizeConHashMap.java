@@ -24,7 +24,6 @@ import java.rmi.RemoteException;
 import java.util.*;
 
 
-
 /**
  * Description:线程安全的Map
  * 比 {@link java.util.concurrent.ConcurrentHashMap}性能高(写元素、读元素、删元素、遍历元素,总内存占用等)
@@ -260,7 +259,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             } else {
                 Node[] tab = TABLE;
                 while (index < tab.length) {
-                    if ((thisNode = tabAt(tab,index++)) != null) {
+                    if ((thisNode = tabAt(tab, index++)) != null) {
                         if (thisNode.key != null) {
                             return thisNode;
                         }
@@ -284,7 +283,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                 Node[] tab = TABLE;
                 int index = this.index;
                 while (index < tab.length) {
-                    if ((node = tabAt(tab,index++)) != null) {
+                    if ((node = tabAt(tab, index++)) != null) {
                         if (node.key != null) {
                             return true;
                         }
@@ -301,7 +300,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
             } else {
                 Node[] tab = TABLE;
                 while (index < tab.length) {
-                    if ((thisNode = tabAt(tab,index++)) != null) {
+                    if ((thisNode = tabAt(tab, index++)) != null) {
                         if (thisNode.key != null) {
                             return thisNode.key;
                         }
@@ -426,18 +425,11 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
     public V get(Object key) {
         Node<K, V> node;
         int h;
-        if ((node = tabAt(TABLE,(h = hash(key.hashCode())) & M)) != null) {
+        if ((node = tabAt(TABLE, (h = hash(key.hashCode())) & M)) != null) {
             do {
                 if (node.h == h && (key.equals(node.key))) {
                     return node.val;
                 }
-                /*每次判断都赋值一次是考虑过的，因为next属性是volatile修饰，每次都会去高速缓存中读(如果
-                高速缓存中没有就会去内存中读然后放到高速缓存行中)，然后取到寄存器中。高速缓存还受缓存一致性协议约束，
-                实际比直接从寄存器中读慢很多。所以这里每次这样操作，每次从高速缓存或者内存中读出来，赋值一份到局部变量
-                表中，并且判断。如果为null，只是浪费一次给局部变量赋值的操作。实际数组有元素的桶的个数就是浪费的赋值
-                次数。而任意一个链表长度大于一，比一大一，就少读一次高速缓存或内存。 经过实际测试，随机放元素，是会出现
-                很多空桶，和很多长度不为1的链表的。
-                * */
             } while ((node = node.next) != null);
         }
         return null;
@@ -449,11 +441,11 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         int i, h;
         Node<K, V> node;
         Node[] tab = TABLE;
-        if ((node = tabAt(tab,(i = (h = hash(key.hashCode())) & M))) != null) {
+        if ((node = tabAt(tab, (i = (h = hash(key.hashCode())) & M))) != null) {
             Node<K, V> preNode;
             while (true) {
                 synchronized (node) {
-                    if (node == (node = tabAt(tab,i))) {
+                    if (node == (node = tabAt(tab, i))) {
                         if (node.h == h && key.equals(node.key)) {
                             V preV = node.val;
                             if (node.next == null) {
@@ -511,7 +503,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         Node<K, V> node;
         Node[] tab = TABLE;
         for (int i = 0; i < TABLE.length; i++) {
-            if ((node = tabAt(tab,i)) != null) {
+            if ((node = tabAt(tab, i)) != null) {
                 if (node.key != null) {
                     sum++;
                 }
@@ -554,7 +546,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
         return new EnteySet();
     }
 
-    private Node<K, V> tabAt(Node[] tab,int i) {
+    private Node<K, V> tabAt(Node[] tab, int i) {
         return (Node<K, V>) U.getObjectVolatile(tab, ((long) i << ASHIFT) + BASE);
     }
 
@@ -590,7 +582,7 @@ public class NoResizeConHashMap<K, V> implements Map<K, V>, Serializable {
                 Field base = cls.getDeclaredField("BASE");
                 base.setAccessible(true);
                 base.set(this, U.arrayBaseOffset(Object[].class));
-                Field aSft= cls.getDeclaredField("ASHIFT");
+                Field aSft = cls.getDeclaredField("ASHIFT");
                 aSft.setAccessible(true);
                 aSft.set(this, 31 - Integer.numberOfLeadingZeros(U.arrayIndexScale(Object[].class)));
                 Field m = cls.getDeclaredField("M");
