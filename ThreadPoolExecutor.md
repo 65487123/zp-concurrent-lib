@@ -17,12 +17,18 @@
     threadPoolExecutor = new ThreadPoolExecutor(1, 3, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() {
             @Override
             public boolean offer(Runnable runnable) {
-                if (threadPoolExecutor.getActiveCount() < 3) {
+            try {
+                Field field = threadPoolExecutor.getClass().getDeclaredField("workers");
+                field.setAccessible(true);
+                if (((Set<?>) field.get(threadPoolExecutor)).size() < 3) {
                     return false;
                 } else {
                     return super.offer(runnable);
                 }
+            } catch (Exception ignored) {
             }
+            return super.offer(runnable);
+        }
      });
      注意：threadPoolExecutor得是成员变量
      
