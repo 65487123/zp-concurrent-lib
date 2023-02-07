@@ -40,15 +40,21 @@ import java.util.concurrent.atomic.AtomicInteger;
   * 实现起来就是通过重写阻塞队列的offer方法，offer()的内容是判断当前线程池里的线程是否达到最大线程，如果没达到最大线程返回false，否则执行入队操作。
   * 伪代码示例如下:
   * threadPoolExecutor = new ThreadPoolExecutor(1, 3, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() {
-  *          @Override
-  *          public boolean offer(Runnable runnable) {
-  *              if (threadPoolExecutor.getActiveCount() < 3) {
-  *                  return false;
-  *              } else {
-  *                  return super.offer(runnable);
-  *              }
-  *          }
-  *   });
+  *         @Override
+  *         public boolean offer(Runnable runnable) {
+  *         try {
+  *             Field field = threadPoolExecutor.getClass().getDeclaredField("workers");
+  *             field.setAccessible(true);
+  *             if (((Set<?>) field.get(threadPoolExecutor)).size() < 3) {
+  *                 return false;
+  *             } else {
+  *                 return super.offer(runnable);
+  *             }
+  *         } catch (Exception ignored) {
+  *         }
+  *         return super.offer(runnable);
+  *     }
+  *  });
   * 注意：threadPoolExecutor得是成员变量
   *
   * 这样做虽说能大致实现上面所说的执行顺序，但是如果用的是{@link java.util.concurrent.ThreadPoolExecutor},会有问题的：
