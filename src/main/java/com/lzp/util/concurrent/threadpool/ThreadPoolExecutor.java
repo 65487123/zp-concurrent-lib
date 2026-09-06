@@ -16,11 +16,11 @@
 package com.lzp.util.concurrent.threadpool;
 
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.concurrent.*;
+ import java.util.concurrent.atomic.AtomicInteger;
 
  /**
   * Description:线程池，和jdk的线程池用法一样
@@ -211,8 +211,18 @@ import java.util.concurrent.atomic.AtomicInteger;
                      while (!shutdownNow) {
                          try {
                              if ((firstTask = blockingQueue.poll(5, TimeUnit.SECONDS)) != null) {
-                                 addWorker(firstTask, false);
-                                 break;
+                                 try {
+                                     addWorker(firstTask, false);
+                                     break;
+                                 } catch (Throwable e) {
+                                     // 创建 Worker 失败，放回任务并稍后重试
+                                     blockingQueue.offer(firstTask);
+                                     try {
+                                         Thread.sleep(50);
+                                     } catch (InterruptedException ignored) {
+                                         Thread.currentThread().interrupt();
+                                     }
+                                 }
                              }
                          } catch (InterruptedException ignored) {
                          }
@@ -452,6 +462,14 @@ import java.util.concurrent.atomic.AtomicInteger;
                              Thread.sleep(1);
                          } catch (InterruptedException ignored) {
                          }
+                     }
+                 }
+             }
+             synchronized (WORKER_LIST) {
+                 if (WORKER_LIST.isEmpty()) {
+                     this.shutdownNow = true;
+                     synchronized (this) {
+                         this.notifyAll();
                      }
                  }
              }
